@@ -6,14 +6,25 @@
 
 | # | Tool | Status | Production | Build Time | Score | Category |
 |---|------|--------|-----------|-----------|-------|----------|
+| 06 | **CORS Error Decoder** | SHIPPED | [/cors](https://papercuts-mauve.vercel.app/cors) | ~3h | 9.7 | HTTP / Debugging |
+| 07 | **CSP Violation Decoder** | SHIPPED | [/csp](https://papercuts-mauve.vercel.app/csp) | ~2.5h | 9.1 | Security |
 | 01 | Will Excel break my CSV? | SHIPPED | [/csv-excel-guard](https://papercuts-mauve.vercel.app/csv-excel-guard) | ~2h | 9.4 | Data integrity |
-| 02 | Invisible Character X-Ray | SHIPPED | [/invisible-characters](https://papercuts-mauve.vercel.app/invisible-characters) | ~1.5h | 8.9 | Text / Unicode |
-| 03 | Nested JSON to CSV | SHIPPED | [/json-to-csv](https://papercuts-mauve.vercel.app/json-to-csv) | ~1.5h | 8.2 | Conversion |
-| 04 | Will this filename break? | SHIPPED | [/filename-checker](https://papercuts-mauve.vercel.app/filename-checker) | ~1.5h | 8.0 | Files / Ops |
+| 02 | Invisible Character X-Ray | SHIPPED | [/invisible-characters](https://papercuts-mauve.vercel.app/invisible-characters) | ~1.5h | 7.4 | Text / Unicode |
+| 03 | Nested JSON to CSV | SHIPPED | [/json-to-csv](https://papercuts-mauve.vercel.app/json-to-csv) | ~1.5h | 5.8 | Conversion |
+| 04 | Will this filename break? | SHIPPED | [/filename-checker](https://papercuts-mauve.vercel.app/filename-checker) | ~1.5h | 5.4 | Files / Ops |
 | 05 | Cron Collision Inspector | SHIPPED | [/cron-inspector](https://papercuts-mauve.vercel.app/cron-inspector) | ~2.5h | 7.9 | Ops / Dev |
 
-**Day 1 total: 5 / 5.** Deployment status for all: verified in production.
-Last verified: 2026-08-31.
+**Day 2: tools 06 and 07** — the genuine top two, after re-running research with a stricter filter.
+**Day 1: tools 01-05.** All seven verified in production. Last verified: 2026-08-31.
+
+Scores for tools 02, 03 and 04 were revised **down** after re-research. Tool 03 (JSON to CSV)
+is a commodity that should not have shipped in a top five, and tool 04 had no demand evidence.
+See RESEARCH.md for the filter that catches this: *is the answer a lookup, or a computation?*
+
+420 assertions across seven engines:
+```bash
+for s in csv xray json names cron cors csp; do node test/test-$s.mjs; done
+```
 
 ---
 
@@ -138,3 +149,57 @@ SEO keywords: cron expression tester, crontab next run time, cron daylight savin
 Opportunity score: 7.9
 What makes it different: Three things no other cron tool does — (1) cross-line collision detection, (2) genuine DST arithmetic that names the exact date a job is skipped or doubled, (3) flagging the POSIX day-of-month/day-of-week **OR** trap, which almost everyone gets wrong.
 Future improvements: Suggested stagger times; export a fixed crontab; Kubernetes CronJob and GitHub Actions schedule syntax.
+
+---
+
+# 06 — CORS Error Decoder
+
+URL: /cors
+Status: SHIPPED
+Date: 2026-08-31
+Problem: The browser blocks a cross-origin request and prints an error that names a header but not a cause, not a culprit, and not a fix.
+Target user: Every web developer. This is the highest-volume developer problem on the internet.
+One-line description: Paste the CORS error, get the diagnosis and the exact server config that fixes it.
+Input: The error string from the browser console. Optionally the request shape — method, content type, custom headers, credentials.
+Output: Named failure mode, which machine is at fault, what actually happened, numbered fix steps, a preflight prediction, and copy-paste config for 14 server stacks with the real origin substituted in.
+Why it exists: ~14.8M Stack Overflow views across the CORS questions. Every existing tool either fires a request — useless, because it cannot reproduce your failing call with your cookies — or emits generic boilerplate that ignores your error. Nobody maps your error to your fix.
+Research signal:
+- "Why does my JavaScript receive a No Access-Control-Allow-Origin error" — **6,593,894 views** / 3,369 pts
+- "No Access-Control-Allow-Origin header is present" — **4,348,557 views** / 1,378 pts
+- "Redirect has been blocked by CORS policy" — **1,945,518 views**
+- "Cannot use wildcard in ACAO when credentials flag is true" — **861,499 views** / 520 pts
+- "CORS: credentials mode is include" — **342,008 views**
+- Flutter, CloudFront, Firefox and nginx variants — **~14.8M total**
+Build time: ~3h
+Tech: Vanilla JS. 14 ordered failure-mode rules matched against real Chrome, Firefox and Safari strings; origin, target and status extraction; a preflight predictor implementing the CORS safelist rules; 14 config generators.
+Distribution: The error string is itself the search query — people paste it into Google verbatim. The highest-intent SEO available anywhere in this list.
+SEO keywords: no access-control-allow-origin fix, blocked by cors policy, cors preflight 401, wildcard credentials cors, response to preflight request doesn't pass access control check
+Opportunity score: 9.7
+What makes it different: It reads *your* error. It names which machine must change — the most common misconception in the whole category is that CORS is fixable from the calling page. It predicts whether a preflight even happens, which is a real computation from method plus content type plus headers. And the generated configs carry the expertise: nginx add_header inside an if block replacing the outer headers, ASP.NET UseCors ordering, Spring Security needing its own CORS pass, Starlette silently downgrading wildcard-plus-credentials, CloudFront needing Origin forwarded in the cache key.
+Future improvements: Infer the framework from the URL shape; a "paste your current response headers" mode; per-failure-mode deep links for SEO.
+
+---
+
+# 07 — CSP Violation Decoder
+
+URL: /csp
+Status: SHIPPED
+Date: 2026-08-31
+Problem: A Content-Security-Policy violation names a directive and stops. The fastest fix — adding unsafe-inline — silently deletes the protection CSP exists to provide.
+Target user: Web developers rolling out or maintaining a CSP.
+One-line description: Paste the violations, get the smallest policy that unblocks them, with a grade showing what each concession costs.
+Input: One or many console violation lines, plus optionally the current policy.
+Output: Per-violation breakdown, a synthesised policy, a nonce/hash/unsafe-inline choice with the safe option first, a 0-100 strictness grade with before and after, and deployment snippets for five targets plus a meta tag.
+Why it exists: ~1.46M views, and the obvious fix is the wrong one. Google's csp-evaluator audits an existing policy for weakness; it does not read your violations and build the minimal policy that unblocks you.
+Research signal:
+- "Content Security Policy: the page's settings blocked loading of a resource" — **579,507 views**
+- "How does Content Security Policy (CSP) work?" — **436,453 views** / 387 pts
+- "Refused to execute inline script because it violates CSP" — **278,235 views**
+- "Refused to execute inline event handler (SANDBOX)" — **169,795 views**
+Build time: ~2.5h
+Tech: Vanilla JS. 15 violation patterns, a directive knowledge base carrying the real fallback chain, policy synthesis with source-expression derivation from blocked URLs, and a weighted grader.
+Distribution: Same shape as CORS — the violation text is the search query.
+SEO keywords: refused to execute inline script csp, content security policy directive fix, csp nonce vs hash, unsafe-inline alternative, csp policy generator
+Opportunity score: 9.1
+What makes it different: It defaults to a nonce and marks unsafe-inline as the last resort it is — and the grade visibly drops from A to C when you select it, so the tool teaches the tradeoff instead of hiding it. It also knows the traps: that a nonce silently disables unsafe-inline, and that frame-ancestors, form-action and base-uri never fall back to default-src, so it adds the free hardening most real policies omit.
+Future improvements: Accept report-uri JSON payloads; compute real SHA-256 hashes from pasted script bodies; per-directive deep links.

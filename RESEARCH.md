@@ -2,135 +2,157 @@
 
 ## Method and its limits
 
-**Reddit was not reachable.** Both scripted access and the browser are blocked by policy in
-this environment, so no Reddit evidence appears below and none is invented. Everything here
-comes from sources actually queried on 2026-08-31:
+**Reddit is unreachable** in this environment (scripted and browser both blocked by policy), so
+no Reddit evidence appears here and none is invented. All figures below are real view counts
+returned by the **Stack Exchange API**, plus **HN Algolia** and competitive checks via search.
 
-- **Stack Exchange API** (`api.stackexchange.com/2.3/search/advanced`) — view counts and
-  scores are real figures returned by the API, not estimates.
-- **HN Algolia API** (`hn.algolia.com/api/v1`) — comment and story search, including full
-  thread traversal of the "tool you wish existed" Ask HN threads.
-- **GitHub search API** via `gh`.
+View count is the best available proxy for *recurring* pain: a question with 6M views is one
+that millions of people hit independently and searched for.
 
-View count is the strongest available proxy for *recurring* pain: a question with 600k views
-is one that hundreds of thousands of people hit independently and searched for.
+## The filter that actually matters
+
+Raw volume is not worthiness. The question that separates a tool from a blog post:
+
+> **Is the answer a lookup, or a computation?**
+
+If the answer is "add this one line," it is documentation — no tool can beat the top Stack
+Overflow answer. If the answer *branches on the user's specific input*, a tool wins. This is
+the filter I failed to apply on day 1, which is how a commodity JSON→CSV converter ended up
+in the top five.
+
+Applying it kills several high-volume candidates outright:
+
+| Candidate | Views | Killed because |
+|---|---|---|
+| nginx 413 upload limit | ~795k | The answer is one config line. Not tool-shaped. |
+| Mixed-content blocked | ~938k | The answer is "use https". Not tool-shaped. |
+| Epoch/timestamp conversion | ~347k | Trivial, and epochconverter.com owns it completely. |
+| 502 Bad Gateway | ~247k | Diagnosis requires server access a web page cannot have. |
 
 ---
 
-## Problem cluster A — Excel silently destroys CSV data
+## Cluster 1 — CORS. The single biggest developer pain on the internet.
 
 Source: Stack Overflow
-Community: Analysts, researchers, developers, ops
-Problem statement: Excel type-guesses every cell on open and rewrites it to match the guess. There is no warning and no undo, and once saved the original value is gone.
-Exact user pain: ZIP codes lose leading zeros. Barcodes and order IDs render as `1.23457E+12`. Gene names become dates. IDs over 15 digits are silently rounded to zeros. Accented names arrive as mojibake.
-Current workaround: Manually prefixing apostrophes; re-importing through the text-import wizard and setting every column to Text; or discovering the corruption weeks later.
-Existing solutions: Blog posts explaining one quirk each; converters that change format without auditing content; `="..."` wrapping done by hand.
-Why they suck: Nothing audits a whole file and reports which specific cells will die. The knowledge is scattered across a dozen Stack Overflow answers.
-Evidence:
-- "Stop Excel from automatically converting certain text values to dates" — 639 pts / **669,387 views**
-- "Excel to CSV with UTF8 encoding" — 651 pts / **902,622 views**
-- "How to import long number from csv to excel without converting to scientific notation in VBA" — 100,330 views
-- "How to save excel columns with long numbers into csv?" — 106,390 views
-- Leading zeros: 46,595 + 45,531 + 22,467 + 22,454 + 14,730 = **151,777 views** across 5 questions
-- Real-world: HGNC renamed human genes in 2020 specifically because of this bug.
-Demand signal: recurring complaint + repeated manual workaround + institutional response.
-Opportunity score: **9.4** → BUILT as tool 01
+Problem statement: The browser blocks a cross-origin request and emits an error that names a
+header but not a cause, a fix, or which of the two machines is at fault.
+Exact user pain: The error blames a header the developer has never set, on a server they may
+not control. It "works in Postman" (because CORS is browser-only), so they conclude the server
+is fine and spend hours trying to fix it from the frontend — which is impossible.
+Current workaround: Paste the error into Google, land on one of a dozen answers written for a
+different stack, try `Access-Control-Allow-Origin: *`, break credentials, try again.
+
+Evidence (real view counts):
+
+| Question | Views | Score |
+|---|---:|---:|
+| Why does my JavaScript receive a "No 'Access-Control-Allow-Origin' header" error | **6,593,894** | 3,369 |
+| No 'Access-Control-Allow-Origin' header is present on the requested resource | **4,348,557** | 1,378 |
+| Redirect has been blocked by CORS policy | **1,945,518** | 203 |
+| Cannot use wildcard in ACAO when credentials flag is true | **861,499** | 520 |
+| CORS: credentials mode is 'include' | **342,008** | 172 |
+| Flutter web API CORS error | **303,937** | 164 |
+| CloudFront: font blocked by CORS | **293,527** | 176 |
+| Why is this CORS request failing only in Firefox? | 87,748 | 67 |
+| Nginx add headers and proxy_pass for CORS (serverfault) | 58,155 | 6 |
+| **Total** | **~14.8M** | |
+
+Existing solutions and why they fail:
+- **Request firers** (CORS Tester extension, test-cors.org) — send a request and show headers.
+  They cannot reproduce *your* failing request with *your* cookies, and they diagnose nothing.
+- **Generic header builders** (IO Tools CORS Headers Builder) — emit boilerplate that ignores
+  your actual error and your actual origin.
+- **Blog posts** — dozens, each written for one stack.
+
+Nobody takes the error string the browser actually printed and turns it into the exact config
+for the server you actually run. That is a pure string-parse plus decision tree — 100%
+client-side, no network, no cost.
+Tool-shaped: **yes** — 14 distinct failure modes × 12 server stacks.
+Opportunity score: **9.7** → **BUILDING NOW as tool 06**
 
 ---
 
-## Problem cluster B — invisible characters break string matching
+## Cluster 2 — Content Security Policy
 
 Source: Stack Overflow
-Community: Developers, data engineers, CMS and CRM users
-Problem statement: Text copied from Word, Docs, PDFs, Slack or an LLM carries characters that occupy no visible width but change the bytes.
-Exact user pain: Two identical-looking strings are unequal. Code will not compile. A CSV column will not join. A lookup fails with no visible cause.
-Current workaround: Blind `.replace(/​/g,'')` chains copied from Stack Overflow, one character at a time.
-Existing solutions: Generic whitespace strippers; regex snippets.
-Why they suck: They fix the one character you already suspected. The actual problem is that you cannot see what is there, so you do not know what to strip.
+Problem statement: CSP blocks a resource and reports a directive, not a remedy. Writing a
+correct policy from scratch is genuinely hard, and every violation is a puzzle about which
+directive to widen and by how little.
+Exact user pain: "Refused to execute inline script because it violates the following Content
+Security Policy directive" — and the safe fix (a nonce or a hash) is not obvious, so people
+paste `unsafe-inline` and silently delete the protection they installed CSP for.
+
 Evidence:
-- "JavaScript remove ZERO WIDTH SPACE (unicode 8203) from string" — 38,772 views
-- "How to replace non-printable unicode characters (JavaScript)" — 45,598 views
-- "Why isn't there a font that contains all Unicode glyphs?" — 56,468 views (adjacent confusion)
-- Security dimension: Trojan Source (CVE-2021-42574) is this exact class of character weaponised.
-Opportunity score: **8.9** → BUILT as tool 02
+
+| Question | Views | Score |
+|---|---:|---:|
+| Content Security Policy: the page's settings blocked loading of a resource | **579,507** | 202 |
+| How does Content Security Policy (CSP) work? | **436,453** | 387 |
+| Refused to execute inline script because it violates CSP | **278,235** | 73 |
+| Refused to execute inline event handler (SANDBOX) | **169,795** | 86 |
+| **Total** | **~1.46M** | |
+
+Existing solutions and why they fail: Google's **csp-evaluator** is excellent but does a
+different job — it audits an existing policy for weakness. It does not take your violation
+messages and tell you the minimal directive that unblocks you without opening a hole. MDN
+documents the directives but will not read your console output.
+Tool-shaped: **yes** — violations → directive mapping, plus policy synthesis and a
+strictness grade.
+Opportunity score: **9.1** → **BUILDING NOW as tool 07**
 
 ---
 
-## Problem cluster C — nested JSON will not become a table
+## Cluster 3 — Excel destroys CSV data  *(shipped, tool 01)*
 
-Source: Stack Overflow
-Community: Analysts, data engineers
-Problem statement: JSON is a tree, a spreadsheet is a rectangle, and flattening requires a decision the format cannot express.
-Exact user pain: Converters emit `[object Object]`, or drop nested arrays, or produce one useless column per array index.
-Current workaround: pandas `json_normalize` plus manual explode, or a bespoke script per API.
-Existing solutions: Many free json-to-csv sites.
-Why they suck: Almost none offer a true unnest (one row per array element with parent fields repeated), which is the mode analysis actually needs.
-Evidence:
-- "How to flatten multilevel/nested JSON?" — **175,613 views**
-- "Convert Pandas Dataframe to nested JSON" — 51,371 views
-- "Redirect output of mongo query to a csv file" — 161,501 views
-Opportunity score: **8.2** → BUILT as tool 03
+| Question | Views |
+|---|---:|
+| Stop Excel from automatically converting text values to dates | **669,387** |
+| Excel to CSV with UTF8 encoding | **902,622** |
+| Long numbers to scientific notation (two questions) | 206,720 |
+| Leading zeros (five questions) | 151,777 |
 
----
+~1.9M views. Real-world confirmation: HGNC renamed human genes in 2020 over this.
+Tool-shaped: yes — per-cell analysis of a whole file. Opportunity score **9.4**.
 
-## Problem cluster D — cron is write-only
+## Cluster 4 — Cron  *(shipped, tool 05)*
 
-Source: Stack Overflow, HN
-Community: Backend engineers, SREs
-Problem statement: Cron syntax is hard to read, and real crontabs fail because of interactions *between* lines that no per-expression tool can see.
-Exact user pain: Everything ends up scheduled at 3am and saturates the box. A job inside the daylight-saving gap is silently skipped for a whole year. `0 0 1 * MON` runs far more often than intended because of POSIX OR semantics.
-Current workaround: crontab.guru, one line at a time, with the DST and collision questions simply unanswered.
-Existing solutions: crontab.guru (dominant, excellent, single-expression only), various next-run calculators.
-Why they suck: None take a whole file. None do DST arithmetic. None flag the day-of-month/day-of-week OR trap.
-Evidence:
-- "Using crontab to execute script every minute and another every 24 hours" — 321 pts / **694,311 views**
-- "How do Cron 'Steps' Work?" — 26,009 views
-- "Quartz: Cron expression that will never execute" — 127 pts / 204,846 views
-- "A cron job that will never execute" — 148 pts / 168,434 views
-Opportunity score: **7.9** → BUILT as tool 05
+"crontab every minute and another every 24 hours" — 694,311 views; "cron that will never
+execute" — 168,434 + 204,846. Tool-shaped: yes (whole-file collisions, DST). Score **7.9**.
 
----
+## Cluster 5 — Invisible characters  *(shipped, tool 02)*
 
-## Problem cluster E — cross-platform filename rules
+Zero-width space removal 38,772 + non-printable Unicode 45,598. Smaller than I claimed the
+value of on day 1 — the Trojan Source angle is the real hook, not the volume. Score **7.4**
+(revised down from 8.9).
 
-Source: Vendor documentation, issue trackers
-Community: Ops, IT, agencies, anyone shipping folders across platforms
-Problem statement: Six platforms, six different definitions of a legal filename.
-Exact user pain: SharePoint silently refuses half a folder. A Git repo cannot be checked out on macOS because two files differ only by case. `con.txt` cannot exist on Windows.
-Current workaround: Find out when it breaks on someone else's machine, then rename by hand.
-Existing solutions: Single-platform validators, mostly Windows-only.
-Why they suck: They check one platform, and none check names *against each other* for case or Unicode-normalisation collisions — which is the failure that actually blocks a checkout.
-Evidence: Weaker quantitative signal than A–D. Shipped on breadth of audience, strength of the sharing loop, and low build cost. **Flagged as the least evidence-backed of the five.**
-Opportunity score: **8.0** → BUILT as tool 04
+## Cluster 6 — Nested JSON → CSV  *(shipped, tool 03 — should not have been top five)*
+
+175,613 views is real, but konklone.io, csvjson.com and jsonformatter.org own the query with
+domain authority I will never beat, and the problem is a solved commodity. The `explode` mode
+is a genuine differentiator attached to a category not worth entering. **Revised score 5.8.**
+
+## Cluster 7 — Filenames  *(shipped, tool 04 — weakest)*
+
+No quantitative demand signal found, before or after re-research. Shipped on judgment.
+**Revised score 5.4.** Kept live because it works and cost little, but it does not belong in
+a "worthy 30" on evidence.
 
 ---
 
-## Problem cluster F — epoch and timestamp conversion (REJECTED)
+## Signals captured, ranked but not yet built
 
-Evidence is strong:
-- "Convert a Unix epoch timestamp into human readable date/time in Excel" — 100,492 views
-- "How to convert epoch time with nanoseconds to human-readable?" — 118,761 views
-- "Converting Epoch timestamp to SQL Server human readable format" — 127,973 views
-
-**Rejected anyway.** epochconverter.com owns this query completely and solves it well. No
-wedge, no novelty, nothing to add. High frequency alone is not enough — see rule 5.
-
----
-
-## Signals captured for later cycles
-
-- **Brand-name availability sweep.** HN comment, 2026-02-02: *"I spent 30+ hours manually checking brand names across a dozen sites... Existing tools are fragmented."* Real, first-person, quantified pain — but a crowded category and a much higher build cost (many network calls, rate limits, SSRF surface). Deferred.
-- **JSONPath playground.** HN comment, 2026-04-12: a developer wanting a JSONPath equivalent of regex101 and finding nothing as good. Narrow but genuine.
-- **Regex explained in plain English.** "Negative lookbehind equivalent in JavaScript" — 179 pts / 101,853 views; "javascript regex look behind alternative" — 160 pts / 132,185 views.
-- **curl → fetch converter.** "How to convert a curl command to fetch()?" — 15,124 views. Small but clean intent.
-- **CSV diff by key.** No single dominant question, but the workaround ("I wrote a script for this") pattern is dense.
-
-## Ideas explicitly rejected
-
-- Generic AI wrappers of every kind (rule 5).
-- Anything needing auth, a database, or per-request cost — it would break the no-login,
-  nothing-uploaded, zero-marginal-cost model that makes this set shippable at this pace.
-- The Ask HN "tool you wish existed" threads turned out to be a poor source: the answers are
-  mostly large, hard, infrastructure-shaped wishes (call-graph explorers, disposable SSH
-  containers, physical/digital whiteboards), not the small-transformation shape this
-  challenge needs. Stack Overflow view counts were far better signal.
+- **Cache-Control behaviour matrix** — 563,108 + 51,086 + 13,328 ≈ 627k views. Tool-shaped:
+  header combination → concrete browser/CDN behaviour, which is a real computation.
+- **Regex → plain English** — 274,632 + 197,956 + 134,013 + 125,685 ≈ 733k. Tool-shaped, but
+  regex101 already explains patterns; the wedge is narrower than the volume suggests.
+- **git undo decision tree** — 345,016 + 316,288 + 182,397 + 135,838 ≈ 979k. Big, but
+  ohshitgit.com and the Git docs serve it well. Medium wedge.
+- **.gitignore "file is still tracked"** — 101,526 views. Small but perfectly tool-shaped:
+  simulate the ignore rules against a real path list and emit the exact `git rm --cached`.
+- **SPF 10-lookup limit** — 54,211 + 16,442 + 7,752 ≈ 78k. Low volume, very high stakes
+  (email stops being delivered). Needs DNS, but DNS-over-HTTPS works from the browser.
+  MXToolbox is clunky and paywalled. A sleeper.
+- **Semver range expander** — no clean SO query found; judgment call, low confidence.
+- **CSV diff by key** — 67,504 + 13,487 ≈ 81k.
+- **SMS GSM-7 / UCS-2 segment counter** — 23,610 + 1,172. Low volume, direct money impact.
+- **ffmpeg aspect-ratio / resolution** — 121,348 views.

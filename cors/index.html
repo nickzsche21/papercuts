@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CORS Error Decoder — paste the error, get the exact fix for your server</title>
+<meta name="description" content="Paste the CORS error your browser printed and get a plain-English diagnosis plus copy-paste config for nginx, Apache, Express, Next.js, Flask, Django, FastAPI, Spring, ASP.NET, Go, Rails, Caddy, Cloudflare or S3 — using your real origin. Runs entirely in your browser.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/cors">
+<meta property="og:title" content="CORS Error Decoder">
+<meta property="og:description" content="Paste the CORS error. Get the exact server config that fixes it.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .stacks{display:flex;flex-wrap:wrap;gap:6px}
+  .stackbtn{font-size:12.5px;padding:6px 11px;border-radius:999px;border:1px solid var(--line-2);
+    background:var(--panel);color:var(--ink-2);cursor:pointer;font-weight:550}
+  .stackbtn:hover{background:var(--panel-2)}
+  .stackbtn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  pre.code{margin:0;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px 15px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.65;
+    color:var(--ink);white-space:pre}
+  .blame{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;
+    padding:5px 12px;border-radius:999px;border:1px solid var(--line-2);background:var(--panel-2)}
+  .shape{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:11px}
+  .shape label{display:block;margin-bottom:4px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:5px 13px;font-size:13.5px;align-items:baseline}
+  .kv dt{color:var(--ink-3);font-weight:550;white-space:nowrap}
+  .kv dd{margin:0;font-family:var(--mono);word-break:break-all;font-size:12.5px}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:0}
+  .steps li{counter-increment:s;position:relative;padding-left:29px;margin-bottom:10px;
+    font-size:14.5px;color:var(--ink-2)}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;
+    border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11.5px;
+    font-weight:700;display:grid;place-items:center}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">CORS · HTTP · Debugging</span>
+    <h1>Paste the CORS error. Get the actual fix.</h1>
+    <p>The browser tells you a header is missing. It does not tell you <em>which machine</em> is at fault, whether a preflight even happened, or what to put in your server config. This does — for your stack, with your real origin filled in.</p>
+  </div>
+
+  <section>
+    <label for="input">Paste the error exactly as your browser console printed it</label>
+    <textarea id="input" spellcheck="false" style="min-height:120px;margin-top:6px"
+      placeholder="Access to fetch at 'https://api.example.com/v1/me' from origin 'https://app.example.com' has been blocked by CORS policy: ..."></textarea>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="decode">Decode it</button>
+      <button id="clear">Clear</button>
+      <span class="muted grow" style="text-align:right">Chrome, Firefox and Safari wording all understood</span>
+    </div>
+    <div style="margin-top:11px">
+      <span class="muted" style="display:block;margin-bottom:6px">Or try a real one:</span>
+      <div class="stacks" id="samples"></div>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>The four things nobody tells you about CORS</h2>
+
+    <h3>1. It works in Postman because CORS does not exist outside a browser</h3>
+    <p>CORS is enforced by the browser, not by the server. <code>curl</code>, Postman, your backend tests and your mobile app will all succeed against an endpoint that a browser refuses to read. That is not evidence the server is configured correctly — it is evidence you are not in a browser. The request usually <em>reached</em> the server and the server usually <em>answered</em>; the browser simply refused to hand the response to your JavaScript.</p>
+
+    <h3>2. The fix is always on the server being called</h3>
+    <p>You cannot fix CORS from the calling page. Not with a fetch option, not with a meta tag, not with a header on your own site. The server at the other end has to opt in. If you do not control it, your only real options are a proxy on your own origin or the API vendor's dashboard — everything else is superstition. This is the single most common wasted afternoon in web development.</p>
+
+    <h3>3. There are often two requests, and the first one is invisible</h3>
+    <p>Anything beyond a "simple" request makes the browser send an <code>OPTIONS</code> preflight first. Sending <code>Content-Type: application/json</code> is enough to trigger it, which is why almost every JSON API needs preflight handling. The preflight carries no cookies and no <code>Authorization</code> header — so if your auth middleware runs before your CORS middleware, it returns 401 to the preflight and the real request is never sent. The browser reports this as a CORS error, which sends people looking in entirely the wrong place.</p>
+
+    <h3>4. <code>*</code> and credentials are mutually exclusive</h3>
+    <p>The moment you set <code>credentials: 'include'</code> or <code>withCredentials = true</code>, the wildcard becomes illegal. You must echo the caller's exact origin back, add <code>Access-Control-Allow-Credentials: true</code>, and — critically — send <code>Vary: Origin</code>, or the first origin to hit your CDN gets its <code>Access-Control-Allow-Origin</code> cached and served to everybody else.</p>
+
+    <h3>Is my error uploaded anywhere?</h3>
+    <p>No. The parsing, the diagnosis and the config generation all happen in this tab. There is no server and no network request — which is also why this tool cannot fetch your endpoint to test it. It does not need to: your browser already ran the test and printed the result, and that error string contains everything needed to identify the cause.</p>
+
+    <h3>Related</h3>
+    <p>If the browser is blocking your scripts and styles rather than your API calls, that is a different mechanism — try the <a href="/csp">CSP Violation Decoder</a>.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/cors/app.js"></script>
+</body>
+</html>

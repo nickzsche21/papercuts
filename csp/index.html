@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CSP Violation Decoder — paste the console errors, get a policy that works</title>
+<meta name="description" content="Paste your Content-Security-Policy console violations and get the minimal policy that unblocks them without opening a hole — nonces and hashes before unsafe-inline, with a strictness grade and ready-to-paste config for nginx, Apache, Express and Next.js.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/csp">
+<meta property="og:title" content="CSP Violation Decoder">
+<meta property="og:description" content="Paste the CSP errors. Get the minimal policy that unblocks them without deleting your protection.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .stacks{display:flex;flex-wrap:wrap;gap:6px}
+  .stackbtn{font-size:12.5px;padding:6px 11px;border-radius:999px;border:1px solid var(--line-2);
+    background:var(--panel);color:var(--ink-2);cursor:pointer;font-weight:550}
+  .stackbtn:hover{background:var(--panel-2)}
+  .stackbtn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  pre.code{margin:0;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px 15px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.65;
+    color:var(--ink);white-space:pre-wrap;word-break:break-word}
+  .grade{display:flex;align-items:baseline;gap:11px}
+  .grade b{font-size:34px;font-weight:700;line-height:1}
+  .fixopt{border:1px solid var(--line-2);border-radius:8px;padding:11px 13px;margin-bottom:8px;
+    background:var(--panel)}
+  .fixopt.best{border-color:var(--ok);background:var(--ok-soft)}
+  .fixopt.worst{border-color:var(--bad);background:var(--bad-soft)}
+  .fixopt h4{margin:0 0 4px;font-size:13.5px;font-weight:650;display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">CSP · Security · Debugging</span>
+    <h1>CSP blocked it. Here's the smallest fix.</h1>
+    <p>The console names a directive and stops. Paste the violations and get the minimal policy that unblocks them — nonces and hashes first, <code>unsafe-inline</code> only when there is genuinely no alternative, with a grade so you can see what each concession costs.</p>
+  </div>
+
+  <section>
+    <label for="input">Paste your CSP violations — as many lines as you have</label>
+    <textarea id="input" spellcheck="false" style="min-height:130px;margin-top:6px"
+      placeholder="Refused to load the script 'https://cdn.example.com/a.js' because it violates the following Content Security Policy directive: &quot;script-src 'self'&quot;."></textarea>
+    <div style="margin-top:11px">
+      <label for="policy">Your current policy — optional, but it makes the output exact</label>
+      <textarea id="policy" spellcheck="false" style="min-height:66px;margin-top:6px"
+        placeholder="default-src 'self'; script-src 'self'; style-src 'self'"></textarea>
+    </div>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="decode">Decode violations</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div style="margin-top:11px">
+      <span class="muted" style="display:block;margin-bottom:6px">Or try a real set:</span>
+      <div class="stacks" id="samples"></div>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>Why CSP is so hard to fix correctly</h2>
+
+    <h3>The fast fix deletes the entire point of CSP</h3>
+    <p>Almost every CSP problem can be silenced by adding <code>'unsafe-inline'</code> to <code>script-src</code>. It works instantly, and it turns off the protection that CSP exists to provide — inline script injection is precisely the attack the policy was blocking. This tool always offers a nonce or a hash first, and marks <code>'unsafe-inline'</code> as the last resort it is.</p>
+
+    <h3>A nonce silently disables <code>'unsafe-inline'</code></h3>
+    <p>If a source list contains both a nonce or hash <em>and</em> <code>'unsafe-inline'</code>, browsers ignore <code>'unsafe-inline'</code> entirely. This is deliberate — it lets you serve a strict policy to modern browsers and a permissive one to old ones — but it catches people constantly: you add a nonce, your other inline scripts break, and the policy looks like it should have allowed them.</p>
+
+    <h3>The fallback chain is not obvious</h3>
+    <p><code>script-src-elem</code> falls back to <code>script-src</code>, which falls back to <code>default-src</code>. But several directives — notably <code>frame-ancestors</code>, <code>form-action</code> and <code>base-uri</code> — do <strong>not</strong> fall back to <code>default-src</code> at all. If you never set them, they are unrestricted no matter how strict the rest of your policy is. That is why <code>base-uri 'none'</code> matters: without it, an injected <code>&lt;base&gt;</code> tag can redirect every relative script URL on the page.</p>
+
+    <h3>Test in report-only mode first</h3>
+    <p>Ship <code>Content-Security-Policy-Report-Only</code> before <code>Content-Security-Policy</code>. The browser reports what it <em>would</em> have blocked without breaking anything, so you can collect real violations from real users instead of guessing. Every generated policy here comes with the report-only version too.</p>
+
+    <h3>Is anything uploaded?</h3>
+    <p>No. Parsing, policy synthesis and grading all happen in this tab. No server, no network request.</p>
+
+    <h3>Related</h3>
+    <p>If the browser is blocking your API calls rather than your scripts and styles, that is CORS, not CSP — try the <a href="/cors">CORS Error Decoder</a>.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/csp/app.js"></script>
+</body>
+</html>
