@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Will Excel Break My CSV? — Find the cells Excel silently destroys</title>
+<meta name="description" content="Drop a CSV and see exactly which cells Excel will silently corrupt — gene names turned into dates, stripped leading zeros, IDs mangled into scientific notation, formula injection. Free, instant, 100% in your browser.">
+<link rel="canonical" href="https://papercuts.tools/csv-excel-guard">
+<meta property="og:title" content="Will Excel Break My CSV?">
+<meta property="og:description" content="Drop a CSV. See every cell Excel will silently destroy. Download a version that survives.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav>
+      <a href="/">All tools</a>
+      <a class="hide-sm" href="/#about">Why</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">CSV · Excel · Data integrity</span>
+    <h1>Will Excel break my CSV?</h1>
+    <p>Drop a CSV. See <strong>every single cell</strong> Excel or Google Sheets will silently mangle — before you send it to anyone. Then download a version that survives.</p>
+  </div>
+
+  <section>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload a CSV file">
+      <h3>Drop a CSV here</h3>
+      <p>or click to choose a file &nbsp;·&nbsp; up to 20&nbsp;MB &nbsp;·&nbsp; never leaves your browser</p>
+    </div>
+    <input type="file" id="file" accept=".csv,.tsv,.txt,text/csv,text/plain" class="sr">
+    <div class="row" style="margin-top:11px;justify-content:center">
+      <button id="sample">Try a cursed sample CSV</button>
+      <button id="paste-toggle">Paste CSV text instead</button>
+    </div>
+    <div id="paste-box" hidden style="margin-top:11px">
+      <textarea id="paste" placeholder="Paste your CSV here…" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:8px"><button class="primary" id="scan-paste">Scan pasted CSV</button></div>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>Why does Excel destroy CSV files?</h2>
+    <p>Excel doesn't ask what your data <em>is</em>. When it opens a <code>.csv</code> it guesses a type for every cell, then rewrites the cell to match its guess — and once you save, the original value is gone. There is no warning and no undo.</p>
+    <p>This is not a rare edge case. In 2020 the HUGO Gene Nomenclature Committee formally <strong>renamed human genes</strong> because Excel kept converting <code>SEPT1</code> into <code>1-Sep</code> and researchers were publishing corrupted datasets. On Stack Overflow, “Stop Excel from automatically converting certain text values to dates” has over <strong>669,000 views</strong>, and the leading-zero and scientific-notation variants add hundreds of thousands more.</p>
+
+    <h3>What this tool checks for</h3>
+    <ul>
+      <li><strong>Date coercion</strong> — <code>SEPT1</code> → <code>1-Sep</code>, <code>3/4</code> → <code>4-Mar</code></li>
+      <li><strong>Ambiguous dates</strong> — <code>03/04/2026</code> means March in the US and April in the EU</li>
+      <li><strong>Leading zeros stripped</strong> — ZIP <code>02134</code> → <code>2134</code></li>
+      <li><strong>Scientific notation</strong> — a 13-digit barcode → <code>1.23457E+12</code></li>
+      <li><strong>Precision loss</strong> — Excel keeps only 15 significant digits, so a 19-digit ID is silently rounded and <em>cannot be recovered</em></li>
+      <li><strong>Formula injection</strong> — a cell starting with <code>=</code>, <code>+</code>, <code>@</code> is executed, which is both a data bug and a real security vulnerability (CWE-1236)</li>
+      <li><strong>International phone numbers</strong> — <code>+44 20 7946 0958</code> becomes <code>#NAME?</code></li>
+      <li><strong>Missing UTF-8 BOM</strong> — the reason accented names arrive as <code>Ã©</code></li>
+      <li><strong>Invisible characters, ragged rows, duplicate headers</strong></li>
+    </ul>
+
+    <h3>Does my file get uploaded?</h3>
+    <p>No. Every check runs in your browser with JavaScript. There is no server, no upload, and no request of any kind — you can open your network tab and watch nothing happen, or disconnect from the internet and it still works.</p>
+
+    <h3>What do the two downloads do?</h3>
+    <p><strong>Excel-safe CSV</strong> wraps every flagged cell as <code>="value"</code> and adds a UTF-8 BOM. Excel will display the exact original text. Use this when a human will open the file in Excel.</p>
+    <p><strong>Sanitised CSV</strong> adds the BOM, strips invisible characters, trims stray whitespace, and neutralises formula-injection cells with a leading apostrophe. Use this when a script or database will read the file.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/csv-excel-guard/app.js"></script>
+</body>
+</html>

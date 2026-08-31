@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nested JSON to CSV — flatten deep JSON into a real spreadsheet</title>
+<meta name="description" content="Paste deeply nested JSON or NDJSON and get a flat CSV. Choose how arrays are handled — join, index, or explode into one row each — pick your columns, and download. Runs entirely in your browser.">
+<link rel="canonical" href="https://papercuts.tools/json-to-csv">
+<meta property="og:title" content="Nested JSON to CSV">
+<meta property="og:description" content="Flatten deeply nested JSON into a real spreadsheet — with array handling that actually works.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:8px}
+  .mode{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line-2);
+    border-radius:8px;padding:11px 12px;cursor:pointer;background:var(--panel);transition:border-color .12s}
+  .mode:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+  .mode input{margin:3px 0 0;flex:none;accent-color:var(--accent)}
+  .mode b{display:block;font-size:13.5px;font-weight:600}
+  .mode span{font-size:12.5px;color:var(--ink-3);line-height:1.4}
+  .cols{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow-y:auto;padding:2px}
+  .colchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);
+    border-radius:999px;padding:4px 11px;font-size:12.5px;font-family:var(--mono);cursor:pointer;background:var(--panel)}
+  .colchip:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .colchip input{accent-color:var(--accent);margin:0}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="/#about">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">JSON · CSV · Data</span>
+    <h1>Nested JSON, flattened properly</h1>
+    <p>API responses nest four levels deep and every converter gives you <code>[object Object]</code>. This one flattens the whole tree, lets you decide what happens to arrays, and hands you a CSV that opens.</p>
+  </div>
+
+  <section>
+    <label for="input">Paste JSON, a JSON array, or NDJSON</label>
+    <textarea id="input" spellcheck="false" style="min-height:190px;margin-top:6px"
+      placeholder='{"orders":[{"id":1,"customer":{"name":"Ada","city":"London"},"items":[{"sku":"A1","qty":2}]}]}'></textarea>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="convert">Convert to CSV</button>
+      <button id="sample">Try a nested sample</button>
+      <button id="pick">Upload a .json file</button>
+      <button id="clear">Clear</button>
+    </div>
+    <input type="file" id="file" accept=".json,.ndjson,.jsonl,.txt,application/json" class="sr">
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>Why flattening nested JSON is annoying</h2>
+    <p>A spreadsheet is a rectangle. JSON is a tree. Every conversion has to make a decision the format itself cannot express, and most tools make the decision badly — silently stringifying an object into <code>[object Object]</code>, or dropping nested arrays entirely.</p>
+    <p>“How to flatten multilevel/nested JSON?” has over <strong>175,000 views</strong> on Stack Overflow, and the nested-JSON-to-CSV variants add tens of thousands more. Everyone hits it; nobody enjoys it.</p>
+
+    <h3>The three things that can happen to an array</h3>
+    <p><strong>Join</strong> keeps one row per record and squashes <code>["red","blue"]</code> into a single cell reading <code>red; blue</code>. Best when the array is a tag list you just want to eyeball.</p>
+    <p><strong>Index</strong> gives each element its own column: <code>tags.0</code>, <code>tags.1</code>, <code>tags.2</code>. Best when the array has a small, fixed length.</p>
+    <p><strong>Explode</strong> gives each element its own <em>row</em>, repeating the parent fields — a real unnest. An order with three line items becomes three rows. This is almost always what you want for analysis, and it is the one most converters do not offer.</p>
+
+    <h3>Does it handle NDJSON?</h3>
+    <p>Yes. If the text is not valid JSON as a whole, each non-empty line is parsed separately, so newline-delimited logs and BigQuery or Mongo exports work as-is.</p>
+
+    <h3>Does my data get uploaded?</h3>
+    <p>No. Parsing, flattening and CSV generation all happen in this tab. There is no server and no network request.</p>
+
+    <h3>Will the CSV open cleanly in Excel?</h3>
+    <p>The download includes a UTF-8 byte-order mark so accented characters survive. If the data contains IDs, ZIP codes or barcodes, run the result through <a href="/csv-excel-guard">Will Excel break my CSV?</a> — Excel will happily turn a long order ID into <code>1.23457E+12</code> without telling you.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/json-to-csv/app.js"></script>
+</body>
+</html>

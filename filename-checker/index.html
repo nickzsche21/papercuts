@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Will this filename break? — check names against Windows, macOS, Linux, SharePoint, S3 and Git</title>
+<meta name="description" content="Paste filenames or drop a folder and see which ones break on Windows, macOS, Linux, SharePoint/OneDrive, S3 or Git — reserved names, illegal characters, path length, case and Unicode collisions. Get safe replacements and a rename script.">
+<link rel="canonical" href="https://papercuts.tools/filename-checker">
+<meta property="og:title" content="Will this filename break?">
+<meta property="og:description" content="Check filenames against Windows, macOS, Linux, SharePoint, S3 and Git before they ruin someone's day.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .plat{display:inline-block;width:22px;text-align:center;font-size:14px;line-height:1.4}
+  .plat.ok{color:var(--ok)} .plat.bad{color:var(--bad)} .plat.warn{color:var(--warn)}
+  td.name{font-family:var(--mono);word-break:break-all;max-width:280px}
+  .legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="/#about">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Files · Ops · Cross-platform</span>
+    <h1>Will this filename break?</h1>
+    <p>Checks every name against Windows, macOS, Linux, SharePoint&nbsp;/&nbsp;OneDrive, S3 and Git — reserved words, illegal characters, path limits, and the case and Unicode collisions that only appear on someone else's machine.</p>
+  </div>
+
+  <section>
+    <label for="input">Paste filenames, one per line</label>
+    <textarea id="input" spellcheck="false" style="min-height:160px;margin-top:6px"
+      placeholder="Q3 Report FINAL.docx&#10;con.txt&#10;invoice: March.pdf&#10;README.md&#10;readme.md"></textarea>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="check">Check names</button>
+      <button id="sample">Try a cursed sample</button>
+      <button id="pickfolder">Read names from a folder</button>
+      <button id="clear">Clear</button>
+    </div>
+    <input type="file" id="folder" webkitdirectory directory multiple class="sr">
+    <p class="muted" style="margin:8px 0 0">Choosing a folder reads only the <em>names</em>. No file contents are opened, and nothing is uploaded.</p>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>Why filenames break</h2>
+    <p>Every operating system and every sync tool has a different idea of what a legal filename is, and you only find out at the worst moment: the upload fails, the ZIP won't extract, the repo won't check out on a colleague's laptop, or SharePoint silently refuses half a folder.</p>
+
+    <h3>The classics</h3>
+    <ul>
+      <li><strong>Reserved device names.</strong> On Windows, <code>CON</code>, <code>PRN</code>, <code>AUX</code>, <code>NUL</code>, <code>COM1</code>–<code>COM9</code> and <code>LPT1</code>–<code>LPT9</code> cannot be filenames — with any extension. <code>con.txt</code> is still illegal.</li>
+      <li><strong>Illegal characters.</strong> Windows rejects <code>&lt; &gt; : " / \ | ? *</code>. A colon is the single most common offender, because it looks fine on macOS.</li>
+      <li><strong>Trailing dots and spaces.</strong> Windows silently strips them, so <code>report.</code> and <code>report</code> become the same file.</li>
+      <li><strong>Case collisions.</strong> <code>README.md</code> and <code>readme.md</code> are two files on Linux and one file on macOS and Windows. This is how a Git repo becomes impossible to check out.</li>
+      <li><strong>Unicode normalisation.</strong> macOS stores <code>é</code> decomposed (NFD), Linux stores whatever you typed. The same visible name can be two different files — or collide unexpectedly.</li>
+      <li><strong>Length.</strong> Linux caps a single name at 255 <em>bytes</em>, so an emoji costs four. Windows caps the whole path at 260 characters by default. SharePoint caps the full URL at 400.</li>
+    </ul>
+
+    <h3>What are the safe replacements?</h3>
+    <p>For each broken name the tool proposes a version that is legal everywhere: illegal characters replaced, reserved names suffixed, trailing dots and spaces trimmed, invisible characters removed, and length brought under the limits with the extension preserved. You can copy the whole set as a <code>mv</code> script.</p>
+
+    <h3>Is anything uploaded?</h3>
+    <p>No. Reading a folder gives the browser a list of names; this page never opens the files and never makes a network request.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/filename-checker/app.js"></script>
+</body>
+</html>

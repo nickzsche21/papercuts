@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Papercuts — tiny tools for tiny internet papercuts</title>
+<meta name="description" content="A growing set of single-purpose tools that fix small, annoying, specific problems: CSVs Excel destroys, invisible characters that break string matching, nested JSON that won't flatten, filenames that fail on someone else's OS, crontabs that collide. Free, no signup, everything runs in your browser.">
+<link rel="canonical" href="https://papercuts.tools/">
+<meta property="og:title" content="Papercuts — tiny tools for tiny internet papercuts">
+<meta property="og:description" content="Single-purpose tools for small, specific, infuriating problems. No signup. Nothing leaves your browser.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav>
+      <a href="#tools">Tools</a>
+      <a class="hide-sm" href="#about">Why</a>
+      <a href="https://github.com/nickzsche21/papercuts">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Five tools live · more every day</span>
+    <h1>Tiny tools for tiny internet papercuts</h1>
+    <p>Small, specific, infuriating problems — the kind you solve by hand every few weeks and never think to look up. One tool per problem. No signup, no upload, nothing leaves your browser.</p>
+  </div>
+
+  <section id="tools">
+    <div class="grid">
+
+      <a class="tool" href="/csv-excel-guard">
+        <span class="tag">CSV · Data integrity</span>
+        <h3>Will Excel break my CSV?</h3>
+        <p>Drop a CSV and see every cell Excel will silently destroy — gene names turned into dates, stripped leading zeros, IDs mangled into scientific notation. Then download a version that survives.</p>
+      </a>
+
+      <a class="tool" href="/invisible-characters">
+        <span class="tag">Text · Unicode</span>
+        <h3>Invisible Character X-Ray</h3>
+        <p>Two identical-looking strings that aren't equal. Paste the text and every zero-width space, non-breaking space, bidi override and homoglyph lights up — then strip them in one click.</p>
+      </a>
+
+      <a class="tool" href="/json-to-csv">
+        <span class="tag">JSON · CSV</span>
+        <h3>Nested JSON to CSV</h3>
+        <p>Flatten deeply nested API responses into a real spreadsheet. Choose whether arrays get joined, indexed, or exploded into one row each — the unnest most converters don't offer.</p>
+      </a>
+
+      <a class="tool" href="/filename-checker">
+        <span class="tag">Files · Cross-platform</span>
+        <h3>Will this filename break?</h3>
+        <p>Check names against Windows, macOS, Linux, SharePoint, S3 and Git. Reserved words, illegal characters, path limits, and the case and Unicode collisions that only appear on someone else's machine.</p>
+      </a>
+
+      <a class="tool" href="/cron-inspector">
+        <span class="tag">Cron · Ops</span>
+        <h3>Cron Collision Inspector</h3>
+        <p>Paste a whole crontab. Find the jobs landing on the same minute, the ones daylight saving silently skips, and the ones that never run at all.</p>
+      </a>
+
+      <span class="tool soon">
+        <span class="tag">Next up</span>
+        <h3>More on the way</h3>
+        <p>Regex explained in plain English, CSV diff by key, curl to fetch, .env leak check, email-header spam forensics.</p>
+      </span>
+
+    </div>
+  </section>
+
+  <section class="prose" id="about">
+    <h2>What this is</h2>
+    <p>Most software problems worth solving are enormous. These are not those. Each of these tools fixes one small thing that wastes twenty minutes and a bit of your goodwill — the CSV that arrives with the ZIP codes already destroyed, the string that will not match itself, the crontab where everything fires at 3am.</p>
+    <p>Every tool here follows the same rules:</p>
+    <ul>
+      <li><strong>One job.</strong> One input, one transformation, one useful result.</li>
+      <li><strong>No account.</strong> The tool is the page. There is nothing to sign up for.</li>
+      <li><strong>Nothing is uploaded.</strong> Every tool runs entirely in your browser — no server, no network request, no telemetry. You can disconnect from the internet and they still work.</li>
+      <li><strong>The output is the product.</strong> Copy it, download it, or copy a report you can paste straight back to whoever caused the problem.</li>
+    </ul>
+
+    <h3>Why "papercuts"?</h3>
+    <p>None of these problems is a crisis. Each one is a small cut you keep re-opening because it was never worth a whole afternoon to fix properly. Collectively they are most of a working week a year.</p>
+
+    <h3>Are these really free?</h3>
+    <p>Yes, and there is no catch to explain: since everything runs client-side there is nothing to meter and almost nothing to pay for. No ads, no tracking, no email capture.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="https://github.com/nickzsche21/papercuts">Source on GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cron Collision Inspector — will your cron jobs pile up, skip a DST hour, or never run?</title>
+<meta name="description" content="Paste a whole crontab. See what each line really means, when it fires next in your timezone, which jobs collide on the same minute, which get skipped or doubled by daylight saving, and which never run at all.">
+<link rel="canonical" href="https://papercuts.tools/cron-inspector">
+<meta property="og:title" content="Cron Collision Inspector">
+<meta property="og:description" content="Paste a whole crontab. Find the collisions, the DST traps, and the jobs that never run.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .heat{display:grid;grid-template-columns:auto repeat(24,minmax(0,1fr));gap:2px;font-size:10px}
+  .heat .hl{color:var(--ink-3);font-size:10px;text-align:right;padding-right:5px;line-height:16px;white-space:nowrap}
+  .heat .hh{color:var(--ink-3);text-align:center;font-size:9.5px;line-height:13px}
+  .heat i{display:block;height:16px;border-radius:2px;background:var(--panel-2);
+    border:1px solid var(--line);font-style:normal}
+  .job{border-left:3px solid var(--line-2);padding-left:13px;margin-bottom:16px}
+  .job.bad{border-left-color:var(--bad)} .job.warn{border-left-color:var(--warn)}
+  .job.ok{border-left-color:var(--ok)}
+  .job h3{margin:0 0 3px;font-size:15px;font-family:var(--mono);font-weight:600;word-break:break-all}
+  .fires{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+  .fire{font-family:var(--mono);font-size:11.5px;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:5px;padding:3px 8px;color:var(--ink-2)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="/#about">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Cron · Scheduling · Ops</span>
+    <h1>Your whole crontab, at once</h1>
+    <p>Every cron tool explains one expression. This one takes the whole file and tells you what actually matters: which jobs land on the same minute, which get skipped or run twice by daylight saving, and which never run at all.</p>
+  </div>
+
+  <section>
+    <label for="input">Paste your crontab — one expression per line, comments and commands welcome</label>
+    <textarea id="input" spellcheck="false" style="min-height:170px;margin-top:6px"
+      placeholder="0 3 * * *   /usr/local/bin/backup.sh&#10;0 3 * * *   /usr/local/bin/reindex.sh&#10;*/5 * * * * /usr/local/bin/poll.sh&#10;30 2 * * 0  /usr/local/bin/weekly.sh"></textarea>
+    <div class="row" style="margin-top:9px">
+      <label for="tz" style="margin-right:-3px">Timezone</label>
+      <select id="tz" style="max-width:280px;width:auto"></select>
+      <button class="primary" id="run">Inspect</button>
+      <button id="sample">Try a sample crontab</button>
+      <button id="clear">Clear</button>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>The three cron bugs nobody catches by reading</h2>
+
+    <h3>1. Everything fires at 3am</h3>
+    <p>Crontabs grow one line at a time, and every line picks a quiet hour. A year later, eleven jobs start simultaneously at <code>0 3 * * *</code>, saturate the disk, and the one that matters times out. Nothing in the file looks wrong; you have to line the schedules up to see it.</p>
+
+    <h3>2. Daylight saving eats the job</h3>
+    <p>Cron runs on wall-clock time. When the clocks go forward, the 2am–3am hour does not exist, and a job scheduled inside it is <strong>silently skipped for the year</strong>. When the clocks go back, that hour happens twice and the job can run twice. If it is a billing run or a report, both outcomes are bad. This tool finds the actual transition dates for your timezone and tells you which lines land in the gap.</p>
+
+    <h3>3. The day-of-month / day-of-week OR trap</h3>
+    <p>If <em>both</em> the day-of-month and day-of-week fields are restricted, cron runs the job when <strong>either</strong> matches, not both. So <code>0 0 1 * MON</code> is not "the 1st, if it is a Monday" — it is "the 1st, <em>and</em> every Monday". This surprises almost everyone, and it is flagged wherever it appears.</p>
+    <p>The tool also catches expressions that can never fire at all — <code>0 0 30 2 *</code> waits for the 30th of February forever.</p>
+
+    <h3>Which cron dialect is this?</h3>
+    <p>Standard five-field Vixie/POSIX cron, the flavour used by Linux, macOS, most Docker images and most CI schedulers. Six-field expressions (Spring and Quartz, where the first field is seconds) are detected and read as such. Names like <code>MON</code> and <code>JAN</code>, step values, ranges, lists and the <code>@daily</code>-style macros all work.</p>
+
+    <h3>Does anything leave my browser?</h3>
+    <p>No. Parsing and every fire-time calculation happen in this tab, using the browser's own timezone database.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/cron-inspector/app.js"></script>
+</body>
+</html>

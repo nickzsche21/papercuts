@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Invisible Character X-Ray — find the hidden characters breaking your text</title>
+<meta name="description" content="Paste any text and see every invisible character: zero-width spaces, non-breaking spaces, bidi overrides, smart quotes, homoglyphs and mojibake. Highlighted, named, and removable in one click. Runs entirely in your browser.">
+<link rel="canonical" href="https://papercuts.tools/invisible-characters">
+<meta property="og:title" content="Invisible Character X-Ray">
+<meta property="og:description" content="Paste text. See the characters you cannot see. Remove them in one click.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .xray{font-family:var(--mono);font-size:13.5px;line-height:2.1;white-space:pre-wrap;
+    word-break:break-word;background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--r);padding:15px;max-height:440px;overflow:auto}
+  .ch{display:inline-block;border-radius:4px;padding:0 3px;margin:0 1px;font-size:10.5px;
+    font-weight:700;letter-spacing:.03em;vertical-align:middle;line-height:1.7;
+    cursor:help;border:1px solid transparent}
+  .ch.critical{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+  .ch.warning{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+  .ch.info{background:var(--panel-2);color:var(--ink-2);border-color:var(--line-2)}
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:7px 16px}
+  .opt{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;color:var(--ink-2);cursor:pointer}
+  .opt input{margin:3px 0 0;flex:none;accent-color:var(--accent)}
+  .opt b{color:var(--ink);font-weight:550;display:block}
+  .opt span{font-size:12.5px;color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="/#about">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Text · Unicode · Debugging</span>
+    <h1>Find the characters you can't see</h1>
+    <p>Your string looks identical but the comparison fails, the code won't compile, the CSV won't parse. Paste it here and every invisible character lights up — named, explained, and removable in one click.</p>
+  </div>
+
+  <section>
+    <label for="input">Paste your text</label>
+    <textarea id="input" spellcheck="false" style="min-height:170px;margin-top:6px"
+      placeholder="Paste text from Word, Google Docs, Slack, a PDF, a website, an LLM, or a file that just won't parse…"></textarea>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="scan">Scan text</button>
+      <button id="sample">Try a haunted sample</button>
+      <button id="clear">Clear</button>
+      <span class="muted grow" style="text-align:right" id="charcount"></span>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>Why invisible characters ruin your day</h2>
+    <p>Copy a line out of Word, a PDF, a Jira ticket or a chat message and you often bring passengers: a non-breaking space that looks exactly like a space, a zero-width space that occupies no width at all, a smart quote where you expected an apostrophe. The text on screen is identical. Every exact-match comparison fails anyway.</p>
+    <p>The Stack Overflow questions for just two of these — removing <code>U+200B</code> zero-width space and stripping non-printable Unicode in JavaScript — have over <strong>84,000 views</strong> between them, and that is one language and two characters out of dozens.</p>
+
+    <h3>The dangerous ones</h3>
+    <p><strong>Bidirectional overrides</strong> (<code>U+202A</code>–<code>U+202E</code>, <code>U+2066</code>–<code>U+2069</code>) reorder how text is displayed without changing what it actually says. In source code this is the <em>Trojan Source</em> attack (CVE-2021-42574): a reviewer reads one program and the compiler builds a different one. This tool flags them as critical wherever they appear.</p>
+    <p><strong>Homoglyphs</strong> are letters from another alphabet that look identical to Latin ones — Cyrillic <code>а</code> versus Latin <code>a</code>. They are how lookalike domains and lookalike package names work, and how a variable name silently becomes a second, different variable.</p>
+
+    <h3>What is mojibake?</h3>
+    <p>When UTF-8 bytes are read as Windows-1252, <code>é</code> arrives as <code>Ã©</code> and an apostrophe becomes <code>â€™</code>. This tool detects that pattern and can decode it back to the original characters.</p>
+
+    <h3>Is my text uploaded anywhere?</h3>
+    <p>No. Everything runs in your browser. There is no server and no network request — paste passwords, tokens or client data if you want to; nothing leaves the tab.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/invisible-characters/app.js"></script>
+</body>
+</html>
