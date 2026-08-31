@@ -528,7 +528,7 @@
         L.push('  ' + c.when + ' — ' + c.jobs.length + ' jobs: ' + c.jobs.map(i => valid[i].expr).join(' | ')));
       L.push('');
     }
-    L.push('(Checked with https://papercuts.tools/cron-inspector)');
+    L.push('(Checked with https://papercuts-mauve.vercel.app/cron-inspector)');
     return L.join('\n');
   }
 

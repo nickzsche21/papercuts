@@ -421,7 +421,7 @@
     }
     L.push('Could you re-export with those columns forced to text, or send it as .xlsx?');
     L.push('');
-    L.push('(Checked with https://papercuts.tools/csv-excel-guard - runs entirely in the browser.)');
+    L.push('(Checked with https://papercuts-mauve.vercel.app/csv-excel-guard - runs entirely in the browser.)');
     return L.join('\n');
   }
 

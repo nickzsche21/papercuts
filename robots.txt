@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://papercuts.tools/sitemap.xml
+Sitemap: https://papercuts-mauve.vercel.app/sitemap.xml

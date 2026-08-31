@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://papercuts.tools/</loc><priority>1.0</priority></url>
-  <url><loc>https://papercuts.tools/csv-excel-guard</loc><priority>0.9</priority></url>
-  <url><loc>https://papercuts.tools/invisible-characters</loc><priority>0.9</priority></url>
-  <url><loc>https://papercuts.tools/json-to-csv</loc><priority>0.9</priority></url>
-  <url><loc>https://papercuts.tools/filename-checker</loc><priority>0.9</priority></url>
-  <url><loc>https://papercuts.tools/cron-inspector</loc><priority>0.9</priority></url>
+  <url><loc>https://papercuts-mauve.vercel.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://papercuts-mauve.vercel.app/csv-excel-guard</loc><priority>0.9</priority></url>
+  <url><loc>https://papercuts-mauve.vercel.app/invisible-characters</loc><priority>0.9</priority></url>
+  <url><loc>https://papercuts-mauve.vercel.app/json-to-csv</loc><priority>0.9</priority></url>
+  <url><loc>https://papercuts-mauve.vercel.app/filename-checker</loc><priority>0.9</priority></url>
+  <url><loc>https://papercuts-mauve.vercel.app/cron-inspector</loc><priority>0.9</priority></url>
 </urlset>

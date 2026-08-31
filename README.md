@@ -5,7 +5,7 @@ Tiny tools for tiny internet papercuts.
 Single-purpose tools for small, specific, infuriating problems — the kind you solve by hand
 every few weeks and never think to look up. Part of a 30-tools-in-7-days build.
 
-**Live:** https://papercuts.tools (see `TOOLS.md` for the current production URL)
+**Live:** https://papercuts-mauve.vercel.app
 
 ## The rules
 

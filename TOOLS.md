@@ -6,11 +6,11 @@
 
 | # | Tool | Status | Production | Build Time | Score | Category |
 |---|------|--------|-----------|-----------|-------|----------|
-| 01 | Will Excel break my CSV? | SHIPPED | [/csv-excel-guard](https://papercuts.vercel.app/csv-excel-guard) | ~2h | 9.4 | Data integrity |
-| 02 | Invisible Character X-Ray | SHIPPED | [/invisible-characters](https://papercuts.vercel.app/invisible-characters) | ~1.5h | 8.9 | Text / Unicode |
-| 03 | Nested JSON to CSV | SHIPPED | [/json-to-csv](https://papercuts.vercel.app/json-to-csv) | ~1.5h | 8.2 | Conversion |
-| 04 | Will this filename break? | SHIPPED | [/filename-checker](https://papercuts.vercel.app/filename-checker) | ~1.5h | 8.0 | Files / Ops |
-| 05 | Cron Collision Inspector | SHIPPED | [/cron-inspector](https://papercuts.vercel.app/cron-inspector) | ~2.5h | 7.9 | Ops / Dev |
+| 01 | Will Excel break my CSV? | SHIPPED | [/csv-excel-guard](https://papercuts-mauve.vercel.app/csv-excel-guard) | ~2h | 9.4 | Data integrity |
+| 02 | Invisible Character X-Ray | SHIPPED | [/invisible-characters](https://papercuts-mauve.vercel.app/invisible-characters) | ~1.5h | 8.9 | Text / Unicode |
+| 03 | Nested JSON to CSV | SHIPPED | [/json-to-csv](https://papercuts-mauve.vercel.app/json-to-csv) | ~1.5h | 8.2 | Conversion |
+| 04 | Will this filename break? | SHIPPED | [/filename-checker](https://papercuts-mauve.vercel.app/filename-checker) | ~1.5h | 8.0 | Files / Ops |
+| 05 | Cron Collision Inspector | SHIPPED | [/cron-inspector](https://papercuts-mauve.vercel.app/cron-inspector) | ~2.5h | 7.9 | Ops / Dev |
 
 **Day 1 total: 5 / 5.** Deployment status for all: verified in production.
 Last verified: 2026-08-31.
