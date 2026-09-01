@@ -8,13 +8,15 @@
 |---|------|--------|-----------|-----------|-------|----------|
 | 06 | **CORS Error Decoder** | SHIPPED | [/cors](https://papercuts-mauve.vercel.app/cors) | ~3h | 9.7 | HTTP / Debugging |
 | 07 | **CSP Violation Decoder** | SHIPPED | [/csp](https://papercuts-mauve.vercel.app/csp) | ~2.5h | 9.1 | Security |
+| 08 | **Cache-Control Simulator** | SHIPPED | [/cache-control](https://papercuts-mauve.vercel.app/cache-control) | ~2h | 8.6 | HTTP / Performance |
+| 09 | **Why isn't my .gitignore working?** | SHIPPED | [/gitignore](https://papercuts-mauve.vercel.app/gitignore) | ~2h | 8.3 | Git / Debugging |
 | 01 | Will Excel break my CSV? | SHIPPED | [/csv-excel-guard](https://papercuts-mauve.vercel.app/csv-excel-guard) | ~2h | 9.4 | Data integrity |
 | 02 | Invisible Character X-Ray | SHIPPED | [/invisible-characters](https://papercuts-mauve.vercel.app/invisible-characters) | ~1.5h | 7.4 | Text / Unicode |
 | 03 | Nested JSON to CSV | SHIPPED | [/json-to-csv](https://papercuts-mauve.vercel.app/json-to-csv) | ~1.5h | 5.8 | Conversion |
 | 04 | Will this filename break? | SHIPPED | [/filename-checker](https://papercuts-mauve.vercel.app/filename-checker) | ~1.5h | 5.4 | Files / Ops |
 | 05 | Cron Collision Inspector | SHIPPED | [/cron-inspector](https://papercuts-mauve.vercel.app/cron-inspector) | ~2.5h | 7.9 | Ops / Dev |
 
-**Day 2: tools 06 and 07** — the genuine top two, after re-running research with a stricter filter.
+**Day 2: tools 06-09.** CORS and CSP first, then Cache-Control and .gitignore from the same ranked queue.
 **Day 1: tools 01-05.** All seven verified in production. Last verified: 2026-08-31.
 
 Scores for tools 02, 03 and 04 were revised **down** after re-research. Tool 03 (JSON to CSV)
@@ -203,3 +205,53 @@ SEO keywords: refused to execute inline script csp, content security policy dire
 Opportunity score: 9.1
 What makes it different: It defaults to a nonce and marks unsafe-inline as the last resort it is — and the grade visibly drops from A to C when you select it, so the tool teaches the tradeoff instead of hiding it. It also knows the traps: that a nonce silently disables unsafe-inline, and that frame-ancestors, form-action and base-uri never fall back to default-src, so it adds the free hardening most real policies omit.
 Future improvements: Accept report-uri JSON payloads; compute real SHA-256 hashes from pasted script bodies; per-directive deep links.
+
+---
+
+# 08 — Cache-Control Simulator
+
+URL: /cache-control
+Status: SHIPPED
+Date: 2026-09-01
+Problem: Caching directives describe intent, not behaviour, and several of them quietly cancel each other out.
+Target user: Web and backend developers, anyone tuning a CDN.
+One-line description: Paste your caching headers and see what actually happens, scenario by scenario.
+Input: Response headers, or a bare Cache-Control value.
+Output: Plain-English verdict, a freshness timeline, a nine-row scenario table (first visit, revisit, expiry, reload, hard reload, back/forward, CDN, stale-while-revalidate, origin down), and a contradiction report.
+Why it exists: The directives are individually documented everywhere and their *interactions* are documented nowhere.
+Research signal:
+- "Difference between max-age=0 and no-cache" — 746 pts / **563,108 views**
+- "Difference between no-cache and must-revalidate" — 245 pts / **207,375 views**
+- Plus 51,086 + 21,382 + 13,328 on related revalidation confusion — **~856k views** on directive interaction alone
+Build time: ~2h
+Tech: Vanilla JS. Directive parser, freshness-lifetime resolver including HTTP heuristic caching, scenario engine, 17 contradiction rules.
+Distribution: Strong SEO on the exact directive-comparison queries; the "you are getting heuristic caching you did not ask for" finding is the shareable moment.
+SEO keywords: cache-control no-cache vs no-store, max-age vs must-revalidate, s-maxage explained, stale-while-revalidate, why is my css cached
+Opportunity score: 8.6
+What makes it different: Existing tools either restate the spec or fire a request at a URL. This one simulates *situations* — the fact that a normal reload revalidates while a link click does not is why most people's manual cache testing is misleading. It also flags heuristic caching, which is the cause of "I never set caching and my users see stale files", and strikes through directives that other directives have already cancelled.
+Future improvements: Per-CDN semantics (Cloudflare, Fastly, CloudFront differ); a "generate the header I want" reverse mode.
+
+---
+
+# 09 — Why isn't my .gitignore working?
+
+URL: /gitignore
+Status: SHIPPED
+Date: 2026-09-01
+Problem: A .gitignore rule appears correct and the file is still tracked, with no feedback about which rule decided what.
+Target user: Every developer using git.
+One-line description: See which single line decides each path, and why the re-include you wrote never runs.
+Input: Your .gitignore, plus paths to test (`git ls-files` pastes straight in).
+Output: Per-path verdict naming the deciding line number, detection of the excluded-parent trap with the corrected pattern, and `git rm --cached` commands for files that are already tracked.
+Why it exists: Git tells you nothing about *why* a path is or is not ignored, and the two most common causes are both invisible.
+Research signal:
+- ".gitignore does not work - file is still being tracked" — 84 pts / **101,526 views**
+- "git track, ignore, delete, untrack" — 13,997 views; "still shows files as untracked despite .gitignore and rm -r --cached" — 3,429; plus related — **~127k views**
+Build time: ~2h
+Tech: Vanilla JS reimplementation of git's ignore matching — anchoring, negation, directory-only patterns, character classes, `**` globs, last-match-wins, and the rule that an excluded directory is never descended into.
+Distribution: Universal developer audience; the trap explanation is the "I didn't know that" hook.
+SEO keywords: gitignore not working, gitignore file still tracked, git rm cached, gitignore negation not working, gitignore exclude subdirectory
+Opportunity score: 8.3
+What makes it different: `git check-ignore -v` names a matching rule but only for one path, only inside a repo, and it says nothing about the two real causes — that the file is already tracked, and that a re-include under an excluded directory can never fire. This explains both and emits the fix.
+**Verification note:** the matcher is differential-tested against real `git check-ignore` — 24 of 24 paths agree, covering anchoring, globstars, character classes, negation ordering and the trap case.
+Future improvements: Multiple nested .gitignore files; global excludes and .git/info/exclude; drag a folder to read real paths.

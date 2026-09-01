@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cache-Control Simulator — what your headers actually do, scenario by scenario</title>
+<meta name="description" content="Paste your Cache-Control headers and see exactly what the browser and a CDN will do on a first visit, a revisit, a reload, a hard reload and after expiry — plus the contradictions that quietly cancel your directives out.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/cache-control">
+<meta property="og:title" content="Cache-Control Simulator">
+<meta property="og:description" content="Paste your caching headers. See what actually happens, scenario by scenario.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .timeline{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .timeline i{display:grid;place-items:center;font-style:normal;font-size:11.5px;font-weight:650;
+    color:var(--ink);white-space:nowrap;overflow:hidden;padding:0 6px}
+  .tl-fresh{background:color-mix(in srgb,var(--ok) 35%,transparent)}
+  .tl-swr{background:color-mix(in srgb,var(--warn) 32%,transparent)}
+  .tl-stale{background:var(--panel-2);color:var(--ink-3)}
+  .scn td:first-child{font-weight:600;white-space:nowrap}
+  .dot2{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;flex:none}
+  .d-net{background:var(--bad)} .d-cache{background:var(--ok)} .d-reval{background:var(--warn)}
+  .presets{display:flex;flex-wrap:wrap;gap:6px}
+  .presets button{font-size:12.5px;padding:6px 11px;border-radius:999px}
+  .dirlist{display:flex;flex-wrap:wrap;gap:6px}
+  .dir{font-family:var(--mono);font-size:12px;padding:4px 10px;border-radius:6px;
+    border:1px solid var(--line-2);background:var(--panel-2)}
+  .dir.off{opacity:.45;text-decoration:line-through}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">HTTP · Caching · Performance</span>
+    <h1>What do these caching headers actually do?</h1>
+    <p>Paste your response headers. See what the browser does on a revisit, what a CDN does, what a reload does — and which of your directives are silently cancelling each other out.</p>
+  </div>
+
+  <section>
+    <label for="input">Paste your response headers, or just the Cache-Control value</label>
+    <textarea id="input" spellcheck="false" style="min-height:110px;margin-top:6px"
+      placeholder="Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=60&#10;ETag: &quot;a1b2c3&quot;&#10;Vary: Accept-Encoding"></textarea>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="run">Simulate</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div style="margin-top:11px">
+      <span class="muted" style="display:block;margin-bottom:6px">Or start from a common case:</span>
+      <div class="presets" id="presets"></div>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>The misunderstandings that cause most caching bugs</h2>
+
+    <h3><code>no-cache</code> does not mean "do not cache"</h3>
+    <p>It means "you may store this, but you must revalidate with the server before every reuse." The response <em>is</em> written to disk. The directive that actually prevents storage is <code>no-store</code>. Confusing these two is the single most common caching mistake — the Stack Overflow questions comparing <code>max-age=0</code> with <code>no-cache</code>, and <code>no-cache</code> with <code>must-revalidate</code>, have over <strong>770,000 views</strong> between them.</p>
+
+    <h3>Sending no headers at all does not mean no caching</h3>
+    <p>If a response has no <code>Cache-Control</code> and no <code>Expires</code> but does have a <code>Last-Modified</code>, browsers apply <em>heuristic freshness</em> — typically a tenth of the time since the file was last modified. A file edited a year ago becomes cacheable for over a month, without anybody choosing that. This is why "I didn't set any caching" and "my users are seeing an old version" are the same bug.</p>
+
+    <h3>A normal reload is not the same as a revisit</h3>
+    <p>Pressing reload makes the browser revalidate even when the response is still fresh, so testing your caching by hitting reload tells you almost nothing about what a real returning visitor experiences. A hard reload goes further and ignores the cache entirely. Navigating to the page from a link is the only path that shows real cache behaviour.</p>
+
+    <h3><code>must-revalidate</code> on its own does nothing</h3>
+    <p>It governs what happens <em>after</em> a response goes stale. With no <code>max-age</code> and no <code>Expires</code> there is nothing to define staleness, so the directive never takes effect. It is not a way to force revalidation — that is <code>no-cache</code>.</p>
+
+    <h3>Is anything uploaded?</h3>
+    <p>No. Parsing and simulation run entirely in this tab. There is no server and no network request, which also means this tool reasons about the headers you paste rather than fetching your URL.</p>
+
+    <h3>Related</h3>
+    <p>If a CDN is serving one user's response to everybody, the cause is usually a missing <code>Vary</code> — the same trap that breaks <a href="/cors">CORS behind a CDN</a>.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/cache-control/app.js"></script>
+</body>
+</html>

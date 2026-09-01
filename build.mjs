@@ -16,8 +16,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(ROOT, 'dist');
 
-const PAGES = ['.', 'cors', 'csp', 'csv-excel-guard', 'invisible-characters',
-  'json-to-csv', 'filename-checker', 'cron-inspector'];
+const PAGES = ['.', 'cors', 'csp', 'cache-control', 'gitignore', 'csv-excel-guard',
+  'invisible-characters', 'json-to-csv', 'filename-checker', 'cron-inspector'];
 const COPY = ['robots.txt', 'sitemap.xml'];
 
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -62,7 +62,9 @@ for (const page of PAGES) {
     console.error('unrecognised script tags in ' + src); process.exit(1);
   }
 
-  if (/<(link|script)[^>]*\s(href|src)="\/(assets|cors|csp|csv|json|file|cron)/.test(html)) {
+  /* Generic, not a per-directory allowlist: any remaining stylesheet link or
+     script src at all is a subresource, and subresources are the bug. */
+  if (/<link[^>]*rel="stylesheet"/.test(html) || /<script[^>]*\ssrc=/.test(html)) {
     console.error('a subresource survived inlining in ' + src); process.exit(1);
   }
 

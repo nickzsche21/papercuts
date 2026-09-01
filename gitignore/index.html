@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Why isn't my .gitignore working? — see which line decides each file</title>
+<meta name="description" content="Paste your .gitignore and your file paths. See exactly which line ignores or un-ignores each one, catch the re-include trap that silently fails, and get the git rm --cached command for files that are already tracked.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/gitignore">
+<meta property="og:title" content="Why isn't my .gitignore working?">
+<meta property="og:description" content="See exactly which .gitignore line decides each file — and why the file git already tracks will never be ignored.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:720px){.two{grid-template-columns:1fr}}
+  .res td:first-child{font-family:var(--mono);font-size:12.5px;word-break:break-all}
+  .rule{font-family:var(--mono);font-size:12px;white-space:nowrap}
+  .lineno{color:var(--ink-3);font-size:11.5px;margin-right:6px}
+  .verd{font-weight:650;white-space:nowrap}
+  .verd.ig{color:var(--ok)} .verd.tr{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Git · Debugging</span>
+    <h1>Why isn't my .gitignore working?</h1>
+    <p>Paste your rules and your paths. See which single line decides each file, catch the re-include that silently does nothing, and find out whether the real answer is that git is already tracking the file.</p>
+  </div>
+
+  <section>
+    <div class="two">
+      <div>
+        <label for="rules">Your .gitignore</label>
+        <textarea id="rules" spellcheck="false" style="min-height:210px;margin-top:6px"
+          placeholder="node_modules/&#10;*.log&#10;build/&#10;!build/keep.txt&#10;.env*"></textarea>
+      </div>
+      <div>
+        <label for="paths">Paths to test <span class="muted" style="font-weight:400">— one per line, end directories with /</span></label>
+        <textarea id="paths" spellcheck="false" style="min-height:210px;margin-top:6px"
+          placeholder="node_modules/react/index.js&#10;src/app.log&#10;build/keep.txt&#10;.env.local&#10;src/index.js"></textarea>
+      </div>
+    </div>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="run">Explain each path</button>
+      <button id="sample">Try a broken example</button>
+      <button id="clear">Clear</button>
+    </div>
+    <p class="muted" style="margin:8px 0 0">Tip: <code>git ls-files</code> pastes straight into the right-hand box and shows you what git is actually tracking today.</p>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>The four reasons .gitignore "doesn't work"</h2>
+
+    <h3>1. The file is already tracked — this is nearly always it</h3>
+    <p><code>.gitignore</code> only applies to files git is <em>not</em> already tracking. Once a file has been committed, git keeps tracking it forever and no pattern will change that. You have to remove it from the index first, which is what <code>git rm --cached</code> does — it untracks the file while leaving it on disk. The Stack Overflow question for this alone has over <strong>100,000 views</strong>, and the answer is never "fix your pattern".</p>
+
+    <h3>2. A parent directory is excluded, so the re-include never runs</h3>
+    <p>This one is genuinely counter-intuitive. If you ignore <code>build/</code> and then write <code>!build/keep.txt</code>, the exception does nothing. Git does not descend into an excluded directory, so it never sees the file to re-include it. The fix is to exclude the <em>contents</em> rather than the directory: <code>build/*</code> followed by <code>!build/keep.txt</code>. This tool flags the trap wherever it finds it.</p>
+
+    <h3>3. The last matching line wins, not the most specific</h3>
+    <p>Ordering is everything. A broad <code>*.log</code> placed after <code>!important.log</code> silently re-ignores the file you were trying to keep. The result below names the exact line number that made the final decision, so you can see which rule is overriding which.</p>
+
+    <h3>4. The pattern is anchored differently than you think</h3>
+    <p>A pattern containing a slash anywhere except at the end is anchored to the location of the <code>.gitignore</code>. So <code>doc/build</code> matches only at the top level, while a bare <code>build</code> matches a directory called <code>build</code> at <em>any</em> depth. Adding or removing one slash changes which files are affected.</p>
+
+    <h3>Does this run real git?</h3>
+    <p>No — it reimplements git's matching rules in the browser: negation, directory-only patterns, anchoring, character classes, <code>**</code>, last-match-wins precedence, and the rule that an excluded directory is never descended into. Nothing is uploaded and no repository is read.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/gitignore/app.js"></script>
+</body>
+</html>
