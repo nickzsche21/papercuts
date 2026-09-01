@@ -6,7 +6,7 @@
   "description": "Tiny tools for tiny internet papercuts.",
   "scripts": {
     "build": "node build.mjs",
-    "test": "for s in csv xray json names cron cors csp cache gitignore; do node test/test-$s.mjs || exit 1; done",
+    "test": "for s in csv xray json names cron cors csp cache gitignore regex csvdiff; do node test/test-$s.mjs || exit 1; done",
     "dev": "npx --yes serve --listen 4399 ."
   }
 }

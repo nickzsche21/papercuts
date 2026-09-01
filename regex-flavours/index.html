@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Will my regex work everywhere? — portability across JS, Python, Go, Java, .NET, PCRE and more</title>
+<meta name="description" content="Paste a regex and see which engines actually support it. Lookbehind, backreferences, atomic groups and named groups all differ between JavaScript, Python, Go, Rust, Java, .NET, PCRE, Ruby and grep. Get the rewrite, or find out there isn't one.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/regex-flavours">
+<meta property="og:title" content="Will my regex work everywhere?">
+<meta property="og:description" content="Your regex works in regex101 and fails in Go. Here's exactly why, and what to use instead.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .engines{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:9px}
+  .eng{border:1px solid var(--line);border-radius:var(--r);padding:12px 13px;background:var(--panel)}
+  .eng.ok{border-color:var(--ok)} .eng.no{border-color:var(--bad)} .eng.part{border-color:var(--warn)}
+  .eng h4{margin:0 0 2px;font-size:14px;font-weight:640}
+  .eng .st{font-size:12px;font-weight:650}
+  .eng.ok .st{color:var(--ok)} .eng.no .st{color:var(--bad)} .eng.part .st{color:var(--warn)}
+  .eng p{margin:5px 0 0;font-size:12px;color:var(--ink-3);line-height:1.45}
+  .mx td,.mx th{text-align:center;padding:7px 6px;font-size:12px}
+  .mx td:first-child,.mx th:first-child{text-align:left;white-space:nowrap}
+  .y{color:var(--ok);font-weight:700} .n{color:var(--bad);font-weight:700} .p{color:var(--warn);font-weight:700}
+  .pat{font-family:var(--mono);font-size:14px;letter-spacing:.01em}
+  .feat{font-family:var(--mono);font-size:12px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Regex · Portability</span>
+    <h1>Will my regex work everywhere?</h1>
+    <p>It works in regex101 and fails in Go. Paste the pattern and see which engines actually support what you used, what to write instead, and where no equivalent exists at all.</p>
+  </div>
+
+  <section>
+    <label for="input">Your regular expression</label>
+    <input type="text" id="input" class="pat" spellcheck="false" style="margin-top:6px"
+      placeholder="(?&lt;=\$)\d+(?:\.\d{2})?">
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="run">Check portability</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div style="margin-top:11px">
+      <span class="muted" style="display:block;margin-bottom:6px">Or try one:</span>
+      <div class="row" id="samples" style="gap:6px"></div>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>Why the same regex behaves differently everywhere</h2>
+    <p>"Regular expression" stopped being one thing decades ago. Every engine added its own extensions, and two of the most popular ones deliberately removed features. A pattern that passes in your editor can be a syntax error in production.</p>
+
+    <h3>Go and Rust genuinely cannot do lookaround or backreferences</h3>
+    <p>This is not an oversight. Both use RE2-style engines that guarantee matching in time linear to the input, which makes them immune to catastrophic backtracking. Lookaround and backreferences are exactly the features that make that guarantee impossible, so they are not implemented and never will be. There is no flag and no workaround — if you need them, you have to match more loosely and filter the results in code.</p>
+
+    <h3>Lookbehind is supported in more places than it is supported <em>well</em></h3>
+    <p>JavaScript and .NET allow variable-length lookbehind. Python's <code>re</code> requires a fixed width and raises an error otherwise. Java allows bounded lengths only. PCRE historically required fixed width and offers <code>\K</code> as an escape hatch. So <code>(?&lt;=ab|abc)</code> is fine in one engine and an error in the next, which is why the Stack Overflow question about lookahead, lookbehind and atomic groups has over <strong>679,000 views</strong>.</p>
+
+    <h3>Named groups have three incompatible syntaxes</h3>
+    <p>Python's <code>re</code> wants <code>(?P&lt;name&gt;…)</code>. JavaScript, Java and .NET want <code>(?&lt;name&gt;…)</code>. PCRE accepts both plus <code>(?'name'…)</code>. Copying a pattern between languages fails on this alone, so this tool rewrites it for you.</p>
+
+    <h3>Is my pattern executed?</h3>
+    <p>No. The pattern is scanned for the constructs it uses — it is never compiled or run against anything, so a pattern with catastrophic backtracking cannot hang this page. Nothing is uploaded either; the whole check runs in this tab.</p>
+
+    <h3>How current is the compatibility data?</h3>
+    <p>It reflects current stable releases, and version-sensitive entries are labelled where it matters — notably Python gained atomic groups and possessive quantifiers in 3.11, and JavaScript gained lookbehind in ES2018. When a feature is marked partial, hover or read the note for the specific restriction.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/regex-flavours/app.js"></script>
+</body>
+</html>

@@ -10,6 +10,8 @@
 | 07 | **CSP Violation Decoder** | SHIPPED | [/csp](https://papercuts-mauve.vercel.app/csp) | ~2.5h | 9.1 | Security |
 | 08 | **Cache-Control Simulator** | SHIPPED | [/cache-control](https://papercuts-mauve.vercel.app/cache-control) | ~2h | 8.6 | HTTP / Performance |
 | 09 | **Why isn't my .gitignore working?** | SHIPPED | [/gitignore](https://papercuts-mauve.vercel.app/gitignore) | ~2h | 8.3 | Git / Debugging |
+| 10 | **Will my regex work everywhere?** | SHIPPED | [/regex-flavours](https://papercuts-mauve.vercel.app/regex-flavours) | ~2.5h | 8.8 | Regex / Portability |
+| 11 | **CSV Diff by key** | SHIPPED | [/csv-diff](https://papercuts-mauve.vercel.app/csv-diff) | ~2h | 7.6 | CSV / Data |
 | 01 | Will Excel break my CSV? | SHIPPED | [/csv-excel-guard](https://papercuts-mauve.vercel.app/csv-excel-guard) | ~2h | 9.4 | Data integrity |
 | 02 | Invisible Character X-Ray | SHIPPED | [/invisible-characters](https://papercuts-mauve.vercel.app/invisible-characters) | ~1.5h | 7.4 | Text / Unicode |
 | 03 | Nested JSON to CSV | SHIPPED | [/json-to-csv](https://papercuts-mauve.vercel.app/json-to-csv) | ~1.5h | 5.8 | Conversion |
@@ -255,3 +257,53 @@ Opportunity score: 8.3
 What makes it different: `git check-ignore -v` names a matching rule but only for one path, only inside a repo, and it says nothing about the two real causes — that the file is already tracked, and that a re-include under an excluded directory can never fire. This explains both and emits the fix.
 **Verification note:** the matcher is differential-tested against real `git check-ignore` — 24 of 24 paths agree, covering anchoring, globstars, character classes, negation ordering and the trap case.
 Future improvements: Multiple nested .gitignore files; global excludes and .git/info/exclude; drag a folder to read real paths.
+
+---
+
+# 10 — Will my regex work everywhere?
+
+URL: /regex-flavours
+Status: SHIPPED
+Date: 2026-09-01
+Problem: "Regular expression" is not one language. A pattern that passes in regex101 can be a syntax error in Go, and the failure appears only in production.
+Target user: Anyone moving a pattern between languages, or writing one for a codebase they do not control.
+One-line description: Paste a regex and see which engines support what you used, with the rewrite where one exists.
+Input: A regular expression.
+Output: Per-engine verdict across 10 engines, a feature-by-engine matrix, an explanation and a workaround for each construct used, a translated pattern for the Python/Go and JavaScript named-group syntaxes, and a catastrophic-backtracking warning.
+Why it exists: The two most popular systems-language engines (Go and Rust) deliberately omit lookaround and backreferences, and nothing warns you before you ship.
+Research signal:
+- "Regex lookahead, lookbehind and atomic groups" — 738 pts / **679,437 views**
+- "How to match, but not capture, part of a regex?" — 338 pts / **322,096 views**
+- "javascript regex - look behind alternative?" — **132,185 views**
+- "Negative lookbehind equivalent in JavaScript" — **101,855 views**
+- **~1.23M views** on advanced-construct confusion
+Build time: ~2.5h
+Tech: Vanilla JS. A construct scanner that tracks escapes and character classes (so `[(?=]` is not mistaken for a lookahead), a fixed-versus-variable-width lookbehind analyser, an 18-feature by 10-engine support matrix, and a syntax translator.
+Distribution: The "works in regex101, fails in Go" framing is the hook.
+SEO keywords: regex lookbehind not supported, go regexp lookahead, regex compatibility python javascript, (?P<name>) vs (?<name>), redos catastrophic backtracking
+Opportunity score: 8.8
+What makes it different: regex101 lets you *pick* a flavour and shows failures one at a time. This answers the portability question directly — which of ten engines will reject this, why, and what to write instead — and it says plainly when there is no equivalent, which is the honest answer for lookaround in RE2.
+**Verification note:** the JavaScript column is verified against the real V8 engine — 17 constructs compiled under the `u` flag, 0 disagreements with the table. The `\p{L}` partial marking is backed by a test showing that without the flag it silently means the literal text `p{L}`.
+Future improvements: More engines (Perl, Swift, Elixir); a per-engine "will this compile" live check where an engine is available in the browser.
+
+---
+
+# 11 — CSV Diff by key
+
+URL: /csv-diff
+Status: SHIPPED
+Date: 2026-09-01
+Problem: A text diff on a CSV is noise the moment the export reorders rows.
+Target user: Analysts, ops, anyone comparing two exports of the same dataset.
+One-line description: Match rows by a key column and show only the cells that genuinely differ.
+Input: Two CSVs, pasted or dropped.
+Output: Added, removed and changed rows with per-cell before and after, a column-level diff, duplicate-key warnings, and a downloadable diff CSV.
+Why it exists: The operation people want is a join, and every general-purpose diff tool offers a line comparison instead.
+Research signal: "Comparing two csv files" and related — ~81k views. Lower volume than the other tools shipped today, and recorded as such.
+Build time: ~2h
+Tech: Vanilla JS. RFC4180 parser with delimiter detection, key inference, composite keys joined on NUL so that ("New","York") cannot collide with "New York".
+Distribution: Pairs naturally with tool 01; both are linked from each other.
+SEO keywords: compare two csv files, csv diff by column, diff csv ignore row order, find changed rows csv
+Opportunity score: 7.6
+What makes it different: Row order is ignored by construction, added columns do not mark every row as modified, and duplicate keys are reported as ambiguous rather than silently paired with whichever row came first.
+Future improvements: Fuzzy matching for near-duplicate keys; numeric tolerance so 1.0 and 1 can count as equal; three-way diff.

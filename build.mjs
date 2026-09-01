@@ -16,8 +16,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(ROOT, 'dist');
 
-const PAGES = ['.', 'cors', 'csp', 'cache-control', 'gitignore', 'csv-excel-guard',
-  'invisible-characters', 'json-to-csv', 'filename-checker', 'cron-inspector'];
+const PAGES = ['.', 'cors', 'csp', 'cache-control', 'gitignore', 'regex-flavours',
+  'csv-diff', 'csv-excel-guard', 'invisible-characters', 'json-to-csv',
+  'filename-checker', 'cron-inspector'];
 const COPY = ['robots.txt', 'sitemap.xml'];
 
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');

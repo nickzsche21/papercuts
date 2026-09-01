@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CSV Diff by key — what actually changed between two exports</title>
+<meta name="description" content="Compare two CSV exports by a key column instead of line by line. Rows that moved are not changes; you get added, removed and genuinely changed rows with the exact cells that differ. Runs entirely in your browser.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/csv-diff">
+<meta property="og:title" content="CSV Diff by key">
+<meta property="og:description" content="A text diff on a CSV is useless once rows move. Diff by key instead.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:720px){.two{grid-template-columns:1fr}}
+  .drop.sm{padding:18px 14px}
+  .drop.sm h3{font-size:14.5px;margin:0 0 3px}
+  .drop.sm p{font-size:12px}
+  .before{color:var(--bad)} .after{color:var(--ok)}
+  .cellwas{text-decoration:line-through;opacity:.75}
+  td.k{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">CSV · Data</span>
+    <h1>What actually changed between these two CSVs?</h1>
+    <p>A text diff says every line changed the moment the export reorders rows. This matches rows by a key column and shows you the cells that genuinely differ.</p>
+  </div>
+
+  <section>
+    <div class="two">
+      <div>
+        <label for="a">Old / before</label>
+        <textarea id="a" spellcheck="false" style="min-height:150px;margin-top:6px"
+          placeholder="id,name,price&#10;1,Widget,9.99"></textarea>
+        <div class="drop sm" id="dropA" tabindex="0" role="button" style="margin-top:7px">
+          <h3>or drop the old CSV</h3><p>never leaves your browser</p>
+        </div>
+        <input type="file" id="fileA" accept=".csv,.tsv,.txt" class="sr">
+      </div>
+      <div>
+        <label for="b">New / after</label>
+        <textarea id="b" spellcheck="false" style="min-height:150px;margin-top:6px"
+          placeholder="id,name,price&#10;1,Widget,12.99"></textarea>
+        <div class="drop sm" id="dropB" tabindex="0" role="button" style="margin-top:7px">
+          <h3>or drop the new CSV</h3><p>never leaves your browser</p>
+        </div>
+        <input type="file" id="fileB" accept=".csv,.tsv,.txt" class="sr">
+      </div>
+    </div>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="run">Compare</button>
+      <button id="sample">Try a sample</button>
+      <button id="clear">Clear</button>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>Why a normal diff is useless on a CSV</h2>
+    <p>Text diffs compare line by line and in order. A database export has no guaranteed order, so re-running it can move every row and produce a diff where everything is red and green and nothing is informative. Insert one row at the top and every subsequent line is reported as changed.</p>
+    <p>The operation you actually want is a join. Match rows by a stable identifier, then compare the matched pairs field by field. That is what this does — and it is why row order is ignored completely here.</p>
+
+    <h3>What is a good key?</h3>
+    <p>Any column whose values are unique and stable: an id, a SKU, an email address, an order number. The tool guesses by looking for a column whose values are unique and complete in both files, and you can override it. Composite keys work too — pick more than one column when no single column is unique on its own.</p>
+
+    <h3>What if the key is not unique?</h3>
+    <p>You are told rather than given a wrong answer. Duplicate keys make the pairing ambiguous, so the affected rows are reported instead of being silently matched to whichever row came first.</p>
+
+    <h3>What about columns that were added or removed?</h3>
+    <p>Reported separately. Only columns present in both files are compared for changes, so adding a column does not make every row look modified.</p>
+
+    <h3>Does my data get uploaded?</h3>
+    <p>No. Both files are parsed and compared in this tab, with no server and no network request.</p>
+
+    <h3>Related</h3>
+    <p>If either export is about to be opened in Excel, run it through <a href="/csv-excel-guard">Will Excel break my CSV?</a> first — a diff is not much use once the leading zeros are already gone.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/csv-diff/app.js"></script>
+</body>
+</html>
