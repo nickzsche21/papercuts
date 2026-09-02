@@ -2,7 +2,7 @@
    build.mjs and scripts/preflight.mjs both read this, so a tool cannot be
    half-registered — added to the build but missing from the hub, or vice versa. */
 export const PAGES = [
-  '.', 'cors', 'csp', 'paste-damage', 'cache-control', 'gitignore', 'regex-flavours',
+  '.', 'regex-backtrack', 'cors', 'csp', 'paste-damage', 'cache-control', 'gitignore', 'regex-flavours',
   'csv-diff', 'csv-excel-guard', 'invisible-characters', 'json-to-csv',
   'filename-checker', 'cron-inspector'
 ];
@@ -10,7 +10,7 @@ export const PAGES = [
 /* Test suites, by their test/test-<name>.mjs suffix. */
 export const SUITES = [
   'csv', 'xray', 'json', 'names', 'cron', 'cors',
-  'csp', 'cache', 'gitignore', 'regex', 'csvdiff', 'paste'
+  'csp', 'cache', 'gitignore', 'regex', 'csvdiff', 'paste', 'backtrack'
 ];
 
 export const SITE = 'https://papercuts-mauve.vercel.app';

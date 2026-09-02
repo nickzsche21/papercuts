@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Watch your regex explode — see catastrophic backtracking happen, step by step</title>
+<meta name="description" content="A real backtracking regex engine that counts every single step. Watch a pattern take 40 steps on one input and four billion on another, see which character the engine hammers, and get the fix. Runs entirely in your browser.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/regex-backtrack">
+<meta property="og:title" content="Watch your regex explode">
+<meta property="og:description" content="Type (a+)+$ and watch the step counter go from 40 to four billion. A real regex engine, counting every step.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .odo{font-family:var(--mono);font-size:clamp(30px,7vw,54px);font-weight:700;
+    letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+  .odo.safe{color:var(--ok)} .odo.warn{color:var(--warn)} .odo.boom{color:var(--bad)}
+  .heat{display:flex;gap:2px;align-items:flex-end;height:110px;overflow-x:auto;padding:2px 0}
+  .heat .col{flex:0 0 auto;width:19px;display:flex;flex-direction:column;
+    justify-content:flex-end;align-items:center;height:100%}
+  .heat .bar{width:100%;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px;
+    transition:height .35s cubic-bezier(.22,1,.36,1)}
+  .heat .ch{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:4px;
+    line-height:1.2;height:14px}
+  .heat .col.hot .bar{background:var(--bad)}
+  .heat .col.hot .ch{color:var(--bad);font-weight:700}
+  .chart{width:100%;height:190px;display:block}
+  .chart .grid{stroke:var(--line);stroke-width:1}
+  .chart .line{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+  .chart .dot{fill:var(--accent)}
+  .chart .lbl{fill:var(--ink-3);font-size:10px;font-family:var(--mono)}
+  .presets{display:flex;flex-wrap:wrap;gap:6px}
+  .presets button{font-size:12.5px;padding:6px 11px;border-radius:999px}
+  .presets button.boom{border-color:var(--bad);color:var(--bad)}
+  .presets button.safe{border-color:var(--ok);color:var(--ok)}
+  .pat{font-family:var(--mono);font-size:14.5px}
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:640px){.vs{grid-template-columns:1fr}}
+  .runbar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Regex · Performance · ReDoS</span>
+    <h1>Watch your regex explode</h1>
+    <p>This page contains a real backtracking regex engine that counts every step it takes. Give it a pattern and a string, and see exactly how much work your regex does — and which character the engine hammers a million times.</p>
+  </div>
+
+  <section>
+    <div class="vs">
+      <div>
+        <label for="pat">Pattern</label>
+        <input type="text" id="pat" class="pat" spellcheck="false" style="margin-top:6px" value="^(a+)+$">
+      </div>
+      <div>
+        <label for="str">Test string</label>
+        <input type="text" id="str" class="pat" spellcheck="false" style="margin-top:6px" value="aaaaaaaaaaaaaaaaaaaa!">
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="run">Run it</button>
+      <button id="clear">Reset</button>
+      <span class="muted grow" style="text-align:right">Capped at 5 million steps so the tab survives</span>
+    </div>
+    <div style="margin-top:12px">
+      <span class="muted" style="display:block;margin-bottom:6px">Try one:</span>
+      <div class="presets" id="presets"></div>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>What you are looking at</h2>
+    <p>Most regex engines — JavaScript, Python, Java, .NET, PCRE, Ruby — are <em>backtracking</em> engines. When a pattern can match a piece of text in more than one way, the engine tries one way, and if the rest of the pattern fails, it comes back and tries another. Usually that is invisible. Occasionally the number of ways to split the text grows exponentially with its length, and a regex that runs instantly on twenty characters takes longer than the age of the universe on forty.</p>
+
+    <h3>Why <code>(a+)+$</code> is the classic</h3>
+    <p>The inner <code>a+</code> can take one <code>a</code>, or two, or five. The outer <code>+</code> then repeats that choice. For a string of <em>n</em> letters there are 2<sup>n-1</sup> ways to divide them into groups, and if the string ends in a character that cannot match, the engine dutifully tries <strong>every single one</strong> before giving up. Add one character, double the work.</p>
+
+    <h3>This is a security bug, not just a slow function</h3>
+    <p>It has a name — ReDoS, regular-expression denial of service — and it is how a single crafted form field takes down a server. It has caused real, large outages: a catastrophic backtracking pattern in a log-parsing rule took Cloudflare's global network down for around 30 minutes in July 2019. If a regex touches user input, its worst case is part of your attack surface.</p>
+
+    <h3>How the numbers here are produced</h3>
+    <p>Not estimated — measured. The page implements a small backtracking engine over the common constructs (literals, character classes, <code>.</code>, groups, alternation, anchors, and greedy, lazy and possessive quantifiers) and increments a counter on every match attempt. The growth chart runs the same pattern against each prefix of your string and plots the real step count for each length. The projection then extrapolates from the measured growth rate, and is labelled as an estimate because it is one.</p>
+
+    <h3>The fixes it suggests</h3>
+    <p>An <strong>atomic group</strong> <code>(?&gt;…)</code> or a <strong>possessive quantifier</strong> <code>++</code> tells the engine never to reconsider what it matched — the ambiguity disappears and so does the explosion. Both are implemented here, so you can toggle one on and watch the counter collapse. Neither exists in JavaScript, which is why the third option, making the branches mutually exclusive, matters most on the web. And nothing in Go or Rust can backtrack at all, which is exactly why they refuse to support lookaround.</p>
+
+    <h3>Is my pattern sent anywhere?</h3>
+    <p>No. The engine is this page. There is no server and no network request, which is also why the step cap exists — your own tab is doing the work.</p>
+
+    <h3>Related</h3>
+    <p><a href="/regex-flavours">Will my regex work everywhere?</a> checks the same pattern for portability across ten engines.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/regex-backtrack/app.js"></script>
+</body>
+</html>

@@ -6,6 +6,7 @@
 
 | # | Tool | Status | Production | Build Time | Score | Category |
 |---|------|--------|-----------|-----------|-------|----------|
+| 14 | **Watch your regex explode** | SHIPPED | [/regex-backtrack](https://papercuts-mauve.vercel.app/regex-backtrack) | ~3h | 9.0 | Regex / Performance |
 | 06 | **CORS Error Decoder** | SHIPPED | [/cors](https://papercuts-mauve.vercel.app/cors) | ~3h | 9.7 | HTTP / Debugging |
 | 07 | **CSP Violation Decoder** | SHIPPED | [/csp](https://papercuts-mauve.vercel.app/csp) | ~2.5h | 9.1 | Security |
 | 08 | **Cache-Control Simulator** | SHIPPED | [/cache-control](https://papercuts-mauve.vercel.app/cache-control) | ~2h | 8.6 | HTTP / Performance |
@@ -331,3 +332,27 @@ Opportunity score: 7.5 on recognition, not volume — recorded separately so it 
 What makes it different: Every other tool in this set diagnoses damage after the fact. This one predicts it beforehand, and the chain view shows compounding, which is how it actually happens.
 **Accuracy note:** three defects were found by testing. A wrapped replacement callback meant string replacements like `$1` were emitted literally; the Excel exponent gained a doubled sign; and, most usefully, the tests caught me asserting that Word mangles ` --header`, which it does **not** — Word only converts a double hyphen with text on both sides. That claim was drama, not behaviour, and the corrected expectation is now a regression test.
 Future improvements: WhatsApp and Teams; a reverse mode that guesses which destination damaged text you are already holding.
+
+---
+
+# 14 — Watch your regex explode
+
+URL: /regex-backtrack
+Status: SHIPPED
+Date: 2026-09-02
+Problem: Catastrophic backtracking is invisible until it takes production down. You cannot see it in your editor, your tests pass, and the browser's own RegExp will not tell you how much work it did.
+Target user: Anyone whose regex touches user input.
+One-line description: A real backtracking regex engine that counts every step, so you can watch a pattern explode and then watch the fix collapse it.
+Input: A pattern and a test string.
+Output: A measured step count, a per-character visit heatmap showing exactly where the engine thrashes, a log-scale chart of steps against input length, a growth classification, a projection to 30/40/50 characters in human time, and one-click defusing with atomic groups and possessive quantifiers.
+Why it exists: Existing ReDoS tooling either statically flags suspicious shapes (and cries wolf) or runs the pattern and times it (which tells you nothing about why). Nothing lets you *see* the backtracking happen.
+Research signal: The regex-performance and ReDoS cluster sits alongside the ~1.23M views of advanced-construct confusion measured for tool 10. Real-world weight: a catastrophic backtracking pattern in a log-parsing rule took Cloudflare's global network down for roughly 30 minutes in July 2019.
+Build time: ~3h
+Tech: Vanilla JS, no dependencies. A complete recursive-descent regex parser and a continuation-passing backtracking matcher, instrumented to count and record every attempt. Supports literals, classes, shorthands, `.`, anchors, word boundaries, groups, alternation, and greedy, lazy, possessive and atomic repetition. Hard step cap of 5,000,000 so the tab always survives. Inline SVG chart, no charting library.
+Distribution: The step counter going from 40 to four billion is the hook. It is the most screenshot-able thing in the set.
+SEO keywords: catastrophic backtracking, redos regex, why is my regex slow, regex denial of service, atomic group possessive quantifier
+Opportunity score: 9.0
+What makes it different: It does not estimate. It implements the engine and measures. The visit heatmap is the part nothing else has — a single red spike over one character is the signature of the engine trying every possible division of the text.
+**Verification note:** the engine's match/no-match verdict is differentially tested against the real JavaScript RegExp across 101 pattern/input pairs, with 0 disagreements. Step counts are this engine's own instrumentation and are labelled as measured; only the 30/40/50-character projection is an extrapolation, and the page says so.
+**Defect found during the build:** growth was first measured over plain prefixes of the test string, which made `^(a+)+$` look *linear* — every prefix of `aaaa…!` is all `a`s and matches instantly, so the explosion never appeared. The blow-up lives on the failure path, so the failing tail is now preserved while the body grows. The classifier was also rewritten to use the log-log slope for polynomial growth rather than a single ratio threshold.
+Future improvements: Step-by-step playback with a scrubber; import a pattern straight from /regex-flavours; detect the attack string automatically rather than asking for one.
