@@ -12,13 +12,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { PAGES } from './tools.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(ROOT, 'dist');
 
-const PAGES = ['.', 'cors', 'csp', 'cache-control', 'gitignore', 'regex-flavours',
-  'csv-diff', 'csv-excel-guard', 'invisible-characters', 'json-to-csv',
-  'filename-checker', 'cron-inspector'];
+
 const COPY = ['robots.txt', 'sitemap.xml'];
 
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
