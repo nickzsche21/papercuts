@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Will this survive being pasted? — what Word, Slack, Notion, Jira and PDFs do to your text</title>
+<meta name="description" content="Paste a command, a key or a snippet and watch what each app quietly does to it. Smart quotes, em dashes, ligatures, markdown eating your underscores — see which destinations break it, and chain them to watch the damage compound.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/paste-damage">
+<meta property="og:title" content="Will this survive being pasted?">
+<meta property="og:description" content="Your command works. You paste it into Slack. It stops working. Here is exactly what happened.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .dests{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px}
+  .dest{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:13px 14px}
+  .dest.fatal{border-color:var(--bad)} .dest.mangled{border-color:var(--warn)} .dest.safe{border-color:var(--ok)}
+  .dest h4{margin:0;font-size:14px;font-weight:640;display:flex;justify-content:space-between;
+    align-items:baseline;gap:9px}
+  .dest .v{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+  .dest.fatal .v{color:var(--bad)} .dest.mangled .v{color:var(--warn)} .dest.safe .v{color:var(--ok)}
+  .out{font-family:var(--mono);font-size:12.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:9px 11px;margin:8px 0 0}
+  .out mark{background:color-mix(in srgb,var(--bad) 30%,transparent);color:inherit;
+    border-radius:3px;padding:0 2px;font-weight:600}
+  .why{margin:7px 0 0;font-size:12px;color:var(--ink-3);line-height:1.5}
+  .why b{color:var(--ink-2);font-weight:600}
+  .chain{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+  .chain select{width:auto;min-width:150px}
+  .arrow{color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Text · Copy-paste · Cursed</span>
+    <h1>Will this survive being pasted?</h1>
+    <p>Your command works. Someone retypes it into a runbook, a colleague copies it back out, and now it does not. Paste it here to see what each app does to text written in it — then chain them and watch the damage compound.</p>
+  </div>
+
+  <section>
+    <label for="input">The text you are about to send someone</label>
+    <textarea id="input" spellcheck="false" style="min-height:100px;margin-top:6px"
+      placeholder="curl -X POST --header 'Content-Type: application/json' https://api.example.com/v1/items"></textarea>
+    <div class="row" style="margin-top:9px">
+      <button class="primary" id="run">Show me the damage</button>
+      <button id="clear">Clear</button>
+    </div>
+    <div style="margin-top:11px">
+      <span class="muted" style="display:block;margin-bottom:6px">Or try something people actually send:</span>
+      <div class="row" id="samples" style="gap:6px"></div>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>Why does this exist</h2>
+    <p>Because "it works on my machine" has a stupider cousin: <em>it worked before I pasted it</em>. A command with a <code>--flag</code> goes into a Word doc, autocorrect turns the two hyphens into an em dash, someone copies it into a terminal, and it fails with an error that mentions nothing about dashes. The text looks correct in every window it passes through. That is the whole problem — the damage is invisible at every step except the last one, where it is someone else's problem.</p>
+
+    <h3>The four things that actually get you</h3>
+    <ul>
+      <li><strong>Smart quotes.</strong> <code>'</code> becomes <code>&rsquo;</code>. A shell sees a literal character, not a quote, so the argument never terminates.</li>
+      <li><strong>Dashes.</strong> <code>--verbose</code> becomes <code>&ndash;verbose</code>. Every flag parser rejects it, and no error message will say why.</li>
+      <li><strong>Markdown.</strong> Slack and Jira read <code>_</code> and <code>*</code> as formatting, so <code>my_var_name</code> arrives as <em>myvarname</em> with the underscores <em>deleted</em>. The text is not mangled, it is missing.</li>
+      <li><strong>PDF ligatures.</strong> Copying <code>define</code> out of a PDF can give you a single <code>&#xFB01;</code> glyph where <code>fi</code> should be. It looks perfect and matches nothing.</li>
+    </ul>
+
+    <h3>When does this actually happen?</h3>
+    <p>Mostly when text is <em>authored or retyped</em> somewhere, not when it passes through untouched. Word and Google Docs autocorrect as you type, so a command someone typed into a runbook is already broken before you copy it out. Slack and Jira apply their formatting when the message is sent or rendered. PDFs do their damage at extraction time. The everyday version of this is copying a command out of a wiki page a colleague wrote by hand.</p>
+
+    <h3>Is this accurate?</h3>
+    <p>These are the standard, default-on behaviours of each destination, and every rule is labelled with what it did and why. They are not exhaustive — autocorrect is configurable, Slack's formatting can be disabled, and PDF extraction varies wildly by producer. Treat a clean result as "nothing obvious will break", not a guarantee. Where a destination's behaviour depends on a setting, the note says so.</p>
+
+    <h3>What should I do instead?</h3>
+    <p>Wrap it in a code block, which every destination here respects. The result below gives you the fenced version to copy. For anything long, a gist or a file beats a paste — and for secrets, none of these destinations should be seeing it at all.</p>
+
+    <h3>Related</h3>
+    <p>If the damage has already happened and you are holding the broken text, <a href="/invisible-characters">Invisible Character X-Ray</a> identifies and strips it. This tool is the other direction: it predicts the damage before you hit send.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/paste-damage/app.js"></script>
+</body>
+</html>

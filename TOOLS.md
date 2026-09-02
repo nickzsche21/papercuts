@@ -12,6 +12,7 @@
 | 09 | **Why isn't my .gitignore working?** | SHIPPED | [/gitignore](https://papercuts-mauve.vercel.app/gitignore) | ~2h | 8.3 | Git / Debugging |
 | 10 | **Will my regex work everywhere?** | SHIPPED | [/regex-flavours](https://papercuts-mauve.vercel.app/regex-flavours) | ~2.5h | 8.8 | Regex / Portability |
 | 11 | **CSV Diff by key** | SHIPPED | [/csv-diff](https://papercuts-mauve.vercel.app/csv-diff) | ~2h | 7.6 | CSV / Data |
+| 12 | **Will this survive being pasted?** | SHIPPED | [/paste-damage](https://papercuts-mauve.vercel.app/paste-damage) | ~2h | 7.5* | Text / Cursed |
 | 01 | Will Excel break my CSV? | SHIPPED | [/csv-excel-guard](https://papercuts-mauve.vercel.app/csv-excel-guard) | ~2h | 9.4 | Data integrity |
 | 02 | Invisible Character X-Ray | SHIPPED | [/invisible-characters](https://papercuts-mauve.vercel.app/invisible-characters) | ~1.5h | 7.4 | Text / Unicode |
 | 03 | Nested JSON to CSV | SHIPPED | [/json-to-csv](https://papercuts-mauve.vercel.app/json-to-csv) | ~1.5h | 5.8 | Conversion |
@@ -307,3 +308,26 @@ SEO keywords: compare two csv files, csv diff by column, diff csv ignore row ord
 Opportunity score: 7.6
 What makes it different: Row order is ignored by construction, added columns do not mark every row as modified, and duplicate keys are reported as ambiguous rather than silently paired with whichever row came first.
 Future improvements: Fuzzy matching for near-duplicate keys; numeric tolerance so 1.0 and 1 can count as equal; three-way diff.
+
+---
+
+# 12 — Will this survive being pasted?
+
+URL: /paste-damage
+Status: SHIPPED
+Date: 2026-09-01
+Problem: Text is silently rewritten by the app it was written in, and the damage is invisible until it reaches something that parses it.
+Target user: Anyone who writes a command into a runbook, a ticket or a chat for someone else to run.
+One-line description: See what Word, Google Docs, Notion, Slack, Jira, a PDF, an iOS keyboard and an Excel cell each do to your text — and chain them.
+Input: Any text, typically a shell command, a key or an identifier.
+Output: Per-destination result with every changed character highlighted, what each rule did and why, a severity verdict, a configurable multi-hop chain showing compounding damage, and a fenced version that survives everywhere.
+Why it exists: **This is the first deliberately weird tool in the set, and it exists because the worthiness gate could not have produced it.** The gate scores on Stack Overflow view counts, which selects for boring by construction — a problem nobody has a name for cannot have 600k views. Nikhil pointed out that 11 of 11 tools were sober utilities when the brief asked for 5–10 weird ones. Scored on recognition rather than volume.
+Research signal: Deliberately none of the usual kind, and that is recorded honestly rather than back-filled. The underlying damage is well documented (smart quotes, autocorrect dashes, Jira underscore-eating, PDF ligatures) but nobody searches for it, because the failure is attributed to the command rather than to the transport.
+Build time: ~2h
+Tech: Vanilla JS. Eight destination models, each a list of real default-on transformations that records what it changed; a severity model distinguishing a lookalike substitution from outright deletion; a chain evaluator that feeds each output into the next.
+Distribution: The chain is the shareable moment — watching a working command decay through three hops.
+SEO keywords: smart quotes breaking command, em dash instead of double hyphen, jira removing underscores, pdf ligature copy paste, why does my command fail after copying
+Opportunity score: 7.5 on recognition, not volume — recorded separately so it does not distort the evidence-scored table.
+What makes it different: Every other tool in this set diagnoses damage after the fact. This one predicts it beforehand, and the chain view shows compounding, which is how it actually happens.
+**Accuracy note:** three defects were found by testing. A wrapped replacement callback meant string replacements like `$1` were emitted literally; the Excel exponent gained a doubled sign; and, most usefully, the tests caught me asserting that Word mangles ` --header`, which it does **not** — Word only converts a double hyphen with text on both sides. That claim was drama, not behaviour, and the corrected expectation is now a regression test.
+Future improvements: WhatsApp and Teams; a reverse mode that guesses which destination damaged text you are already holding.
