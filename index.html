@@ -38,16 +38,16 @@
   <section id="tools">
     <div class="grid">
 
-      <a class="tool" href="/paste-damage">
-        <span class="tag">Text · Cursed</span>
-        <h3>Will this survive being pasted?</h3>
-        <p>Your command works until someone retypes it into a runbook. See what Word, Slack, Notion, Jira and PDFs each do to it — then chain them and watch the damage compound.</p>
-      </a>
-
       <a class="tool" href="/regex-backtrack" style="grid-column:1/-1;border-color:var(--accent)">
         <span class="tag">Regex · Performance · ReDoS</span>
         <h3>Watch your regex explode</h3>
         <p>A real backtracking regex engine, running in the page, counting every step it takes. Type <code>(a+)+$</code> and watch the counter go from 40 steps to four billion — then see which character the engine hammers, and toggle the fix that collapses it back.</p>
+      </a>
+
+      <a class="tool" href="/paste-damage">
+        <span class="tag">Text · Cursed</span>
+        <h3>Will this survive being pasted?</h3>
+        <p>Your command works until someone retypes it into a runbook. See what Word, Slack, Notion, Jira and PDFs each do to it — then chain them and watch the damage compound.</p>
       </a>
 
       <a class="tool" href="/cors">
@@ -62,7 +62,6 @@
         <p>Paste your Content-Security-Policy console errors and get the smallest policy that unblocks them — nonces and hashes before unsafe-inline, with a grade showing what each concession costs.</p>
       </a>
 
-
       <a class="tool" href="/cache-control">
         <span class="tag">HTTP · Caching</span>
         <h3>Cache-Control Simulator</h3>
@@ -74,7 +73,6 @@
         <h3>Why isn&#39;t my .gitignore working?</h3>
         <p>See which single line decides each file, catch the re-include that silently does nothing, and find out when the real answer is that git already tracks the file.</p>
       </a>
-
 
       <a class="tool" href="/regex-flavours">
         <span class="tag">Regex · Portability</span>
