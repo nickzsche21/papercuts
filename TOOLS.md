@@ -6,6 +6,7 @@
 
 | # | Tool | Status | Production | Build Time | Score | Category |
 |---|------|--------|-----------|-----------|-------|----------|
+| 15 | **COPY failed: file not found** | SHIPPED | [/dockerignore](https://papercuts-mauve.vercel.app/dockerignore) | ~2h | 8.0 | Docker / Build |
 | 14 | **Watch your regex explode** | SHIPPED | [/regex-backtrack](https://papercuts-mauve.vercel.app/regex-backtrack) | ~3h | 9.0 | Regex / Performance |
 | 06 | **CORS Error Decoder** | SHIPPED | [/cors](https://papercuts-mauve.vercel.app/cors) | ~3h | 9.7 | HTTP / Debugging |
 | 07 | **CSP Violation Decoder** | SHIPPED | [/csp](https://papercuts-mauve.vercel.app/csp) | ~2.5h | 9.1 | Security |
@@ -356,3 +357,29 @@ What makes it different: It does not estimate. It implements the engine and meas
 **Verification note:** the engine's match/no-match verdict is differentially tested against the real JavaScript RegExp across 101 pattern/input pairs, with 0 disagreements. Step counts are this engine's own instrumentation and are labelled as measured; only the 30/40/50-character projection is an extrapolation, and the page says so.
 **Defect found during the build:** growth was first measured over plain prefixes of the test string, which made `^(a+)+$` look *linear* — every prefix of `aaaa…!` is all `a`s and matches instantly, so the explosion never appeared. The blow-up lives on the failure path, so the failing tail is now preserved while the body grows. The classifier was also rewritten to use the log-log slope for polynomial growth rather than a single ratio threshold.
 Future improvements: Step-by-step playback with a scrubber; import a pattern straight from /regex-flavours; detect the attack string automatically rather than asking for one.
+
+---
+
+# 15 — COPY failed: file not found in build context
+
+URL: /dockerignore
+Status: SHIPPED
+Date: 2026-09-03
+Problem: Docker refuses to copy a file that is plainly on disk, and the error names neither the cause nor the rule that excluded it.
+Target user: Anyone writing a Dockerfile, especially in a monorepo.
+One-line description: Paste your .dockerignore and your paths, and see which line excluded the file COPY cannot find.
+Input: A .dockerignore, a path list (`git ls-files` pastes straight in), and optionally the failing COPY line.
+Output: Per-path included/excluded with the deciding line, a COPY diagnosis covering context escapes and case, and a side-by-side of where each pattern diverges from .gitignore.
+Why it exists: The two files look identical and are not, and the difference silently costs either a gigabyte of image or a failed build.
+Research signal:
+- "Docker: COPY failed: file not found in build context (Dockerfile)" — 53 pts / **205,167 views**
+- "Docker build fails on file not found or excluded by .dockerignore" — 4,953 views
+- Combined across the cluster: **633,183 views**
+Build time: ~2h
+Tech: Vanilla JS. Docker's documented matching rules — root-relative patterns, Go-style `*` `?` `[]` that do not cross a separator, `**` spanning directories, `!` exceptions, last-match-wins, ancestor matching so an excluded directory takes its contents with it.
+Distribution: The monorepo `node_modules` finding is the hook — most people do not know their nested ones are still being copied.
+SEO keywords: copy failed file not found in build context, dockerignore not working, dockerignore node_modules nested, docker build context too large
+Opportunity score: 8.0
+What makes it different: It names the deciding line, and it surfaces the anchoring divergence from `.gitignore` — a bare `node_modules` matches at any depth in git and only at the context root in Docker, so every nested copy is still shipped. Nothing else points at that.
+**Verification note — weaker than its siblings, stated plainly.** Docker was not installed on the build machine, so unlike the gitignore matcher (differentially tested against real `git check-ignore`) and the regex engine (tested against real V8), this could not be checked against the real daemon. 70 assertions cover the documented rules. Treat the line attributions as reliable and the exotic edge cases as advisory; the page says the same.
+Future improvements: Differential test against a real daemon when one is available; estimate context size shipped versus saved; parse a whole Dockerfile rather than one COPY.

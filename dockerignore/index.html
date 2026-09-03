@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>COPY failed: file not found in build context — find out which line excluded it</title>
+<meta name="description" content="Paste your .dockerignore and your paths to see which line excluded the file COPY cannot find. Catches the trap that node_modules in .dockerignore only matches at the context root, unlike .gitignore where it matches at any depth.">
+<link rel="canonical" href="https://papercuts-mauve.vercel.app/dockerignore">
+<meta property="og:title" content="COPY failed: file not found in build context">
+<meta property="og:description" content="Which .dockerignore line excluded your file — and why node_modules there is not the same as node_modules in .gitignore.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c2410c'/><path d='M9 22 L23 10' stroke='white' stroke-width='3.4' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:720px){.two{grid-template-columns:1fr}}
+  .res td:first-child{font-family:var(--mono);font-size:12.5px;word-break:break-all}
+  .rule{font-family:var(--mono);font-size:12px;white-space:nowrap}
+  .lineno{color:var(--ink-3);font-size:11.5px;margin-right:6px}
+  .verd{font-weight:650;white-space:nowrap}
+  .verd.inc{color:var(--ok)} .verd.exc{color:var(--bad)}
+  .cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:stretch;
+    border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .cmp > div{padding:13px 15px}
+  .cmp .mid{background:var(--panel-2);display:grid;place-items:center;
+    border-left:1px solid var(--line);border-right:1px solid var(--line);
+    font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);font-weight:640}
+  .cmp h4{margin:0 0 5px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+  .cmp p{margin:0;font-size:13.5px;color:var(--ink-2)}
+  @media (max-width:640px){.cmp{grid-template-columns:1fr}.cmp .mid{border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap-wide">
+    <a class="brand" href="/"><span class="dot"></span> Papercuts</a>
+    <nav><a href="/">All tools</a><a class="hide-sm" href="#faq">Why</a></nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap-wide">
+
+  <div class="hero">
+    <span class="eyebrow">Docker · Build context</span>
+    <h1>COPY failed: file not found in build context</h1>
+    <p>The file is right there. Paste your <code>.dockerignore</code> and your paths, and find out which line excluded it — and whether you have hit the trap where <code>node_modules</code> means something different here than it does in <code>.gitignore</code>.</p>
+  </div>
+
+  <section>
+    <div class="two">
+      <div>
+        <label for="rules">Your .dockerignore</label>
+        <textarea id="rules" spellcheck="false" style="min-height:200px;margin-top:6px"
+          placeholder="node_modules&#10;*.log&#10;.git&#10;!.git/HEAD"></textarea>
+      </div>
+      <div>
+        <label for="paths">Paths in your build context <span class="muted" style="font-weight:400">— <code>git ls-files</code> works</span></label>
+        <textarea id="paths" spellcheck="false" style="min-height:200px;margin-top:6px"
+          placeholder="package.json&#10;node_modules/react/index.js&#10;app/node_modules/left-pad/index.js&#10;src/index.js"></textarea>
+      </div>
+    </div>
+    <div style="margin-top:11px">
+      <label for="copysrc">The COPY that is failing <span class="muted" style="font-weight:400">— optional</span></label>
+      <input type="text" id="copysrc" spellcheck="false" style="margin-top:6px;font-family:var(--mono);font-size:13.5px"
+        placeholder="COPY ./app/config.json /srv/config.json">
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="run">Explain it</button>
+      <button id="sample">Try the classic trap</button>
+      <button id="clear">Clear</button>
+    </div>
+  </section>
+
+  <div id="status" aria-live="polite"></div>
+  <div id="out" hidden></div>
+
+  <section class="prose" id="faq">
+    <h2>The trap almost everyone hits</h2>
+    <p><code>.dockerignore</code> and <code>.gitignore</code> look like the same file. They are not, and the difference is the single most common cause of a build that copies gigabytes it should not, or fails to copy a file that is plainly on disk.</p>
+
+    <h3>Patterns are anchored to the context root</h3>
+    <p>In <code>.gitignore</code>, a bare <code>node_modules</code> matches a directory of that name at <em>any</em> depth. In <code>.dockerignore</code> it matches only <code>./node_modules</code>, at the top of the build context. A nested <code>app/node_modules</code> or <code>packages/ui/node_modules</code> is copied in full, which is how a monorepo image quietly gains a gigabyte. To get the git behaviour you have to write <code>**/node_modules</code>.</p>
+
+    <h3>There is exactly one of them</h3>
+    <p><code>.gitignore</code> works per-directory — you can drop one in any subfolder and it applies from there down. <code>.dockerignore</code> does not. There is one file, it lives at the root of the build context, and a <code>.dockerignore</code> in a subdirectory does nothing at all. If yours is next to the Dockerfile but the build context is the repository root, it is being ignored entirely.</p>
+
+    <h3>The last matching line wins</h3>
+    <p>Order decides everything, exactly as in git. A broad <code>*</code> placed after <code>!keep.txt</code> silently re-excludes the file you were trying to keep, and the result below names the exact line that made the final call.</p>
+
+    <h3>Other reasons COPY cannot find a file</h3>
+    <ul>
+      <li><strong>The path is outside the build context.</strong> <code>COPY ../shared/x.json</code> can never work — the daemon only receives what is inside the context directory, and there is no way to reach above it.</li>
+      <li><strong>The context is not what you think.</strong> In <code>docker build -f docker/Dockerfile .</code> the context is <code>.</code>, so every COPY source is relative to the repository root, not to the Dockerfile.</li>
+      <li><strong>Case.</strong> The daemon matches case-sensitively even when your filesystem does not, so a build that works on a Mac fails in CI.</li>
+      <li><strong>It is untracked but present.</strong> Docker copies from the filesystem, not from git — being in <code>.gitignore</code> does not exclude a file from the context, only <code>.dockerignore</code> does.</li>
+    </ul>
+
+    <h3>How exact is this?</h3>
+    <p>The matcher here implements Docker's documented rules: patterns relative to the context root, Go-style <code>*</code>, <code>?</code> and character classes that do not cross a separator, <code>**</code> spanning directories, <code>!</code> exceptions, and last-match-wins. It is a reimplementation, not the daemon — Docker was not available on the machine this was built on, so unlike the sibling tools it could not be differentially tested against the real thing. Treat the line attributions as reliable and the exotic edge cases as advisory.</p>
+
+    <h3>Related</h3>
+    <p><a href="/gitignore">Why isn't my .gitignore working?</a> does the same job for git, where the rules genuinely differ.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap-wide">
+    <span>Papercuts — tiny tools for tiny internet papercuts.</span>
+    <span><a href="/">See all tools →</a></span>
+  </div>
+</footer>
+
+<script src="/assets/base.js"></script>
+<script src="/dockerignore/app.js"></script>
+</body>
+</html>

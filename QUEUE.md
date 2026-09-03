@@ -19,18 +19,10 @@ Every item must clear all four before a line of code is written:
 
 ## Ready
 
-### 1. Docker build context / .dockerignore debugger — `/dockerignore`
-- **Evidence:** "Docker: COPY failed: file not found in build context" — **205,162 views**, 53 pts.
-- **Queries:** `docker copy file not found build context`, `dockerignore build context exclude`
-- **Why tool-shaped:** simulate the ignore rules against a path list and say which
-  line excluded the file COPY cannot find.
-- **The wedge:** `.dockerignore` and `.gitignore` look identical and behave
-  differently — Docker *does* let you re-include a file inside an excluded
-  directory, git does not. Nothing documents that difference interactively, and
-  the `/gitignore` matcher is most of the engine already.
-- **Est:** 2h. **Score:** 8.0
+_Shipped 3 Sep 2026: Docker build context / .dockerignore debugger (tool 15)._
 
-### 2. Git undo decision tree — `/git-undo`
+
+### 1. Git undo decision tree — `/git-undo`
 - **Evidence:** undo last commit 345,016 + rollback push 316,288 + undo to unstaged
   135,838 + undo last commit 182,397 ≈ **979,000 views**.
 - **Queries:** `undo last git commit`, `git reset hard revert difference`
@@ -41,7 +33,7 @@ Every item must clear all four before a line of code is written:
   suggest `--hard` without saying what is lost. **Validate the wedge before building.**
 - **Est:** 2h. **Score:** 7.2
 
-### 3. Cookie SameSite / third-party cookie debugger — `/cookies`
+### 2. Cookie SameSite / third-party cookie debugger — `/cookies`
 - **Evidence:** "Chrome blocking third party cookies, set SameSite=None" — 41,190
   views; Safari iframe SameSite — 10,872; localhost cookie — 5,542. **Needs revalidation**,
   combined is near the threshold.
