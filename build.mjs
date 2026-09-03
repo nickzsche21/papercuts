@@ -85,7 +85,7 @@ const csp = [
   "script-src " + [...scriptHashes].join(' '),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
-  "font-src 'self'",
+  "font-src 'self' data:",
   "form-action 'none'",
   "base-uri 'none'",
   "frame-ancestors 'self'"
